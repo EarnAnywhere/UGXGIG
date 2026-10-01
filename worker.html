@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find work — UGXGIG</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <a href="index.html" class="brand">UGX<span>GIG</span></a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="boss.html">Post a job</a>
+      <a href="worker.html" class="current">Find work</a>
+      <a href="games.html">Games</a>
+      <a href="referral.html">Refer</a>
+    </nav>
+  </div>
+</div>
+
+<header class="page-head">
+  <div class="wrap">
+    <p class="kicker">For workers</p>
+    <h1>Find work</h1>
+    <p class="sub">Open gigs below. Apply and you'll be taken straight to the boss's WhatsApp chat.</p>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div id="jobList">Loading jobs&hellip;</div>
+    </div>
+  </section>
+</main>
+
+<!-- Apply modal -->
+<div id="applyOverlay" style="display:none; position:fixed; inset:0; background:rgba(26,29,21,0.6); z-index:50; align-items:center; justify-content:center; padding:20px;">
+  <div class="card" style="max-width:420px; width:100%; max-height:88vh; overflow-y:auto;">
+    <h3 style="font-size:19px; margin-bottom:4px;">Apply for <span id="applyJobTitle"></span></h3>
+    <p style="font-size:13px; color:var(--ink-soft); margin-bottom:18px;">This goes straight to the boss on WhatsApp.</p>
+
+    <form id="applyForm">
+      <div class="field">
+        <label for="workerName">Your name</label>
+        <input type="text" id="workerName" required>
+      </div>
+      <div class="field">
+        <label for="workerNumber">Your number</label>
+        <input type="tel" id="workerNumber" required placeholder="07XXXXXXXX">
+      </div>
+      <div class="field">
+        <label for="workerSkill">Relevant skill / experience</label>
+        <textarea id="workerSkill" required placeholder="Why you're a good fit for this job"></textarea>
+      </div>
+      <div class="grid grid-2">
+        <button type="button" class="btn btn-ghost" id="applyCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Continue to WhatsApp</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">UGXGIG &mdash; every gig ends in a WhatsApp chat.</div>
+</footer>
+
+<script src="config.js"></script>
+<script>
+let currentJob = null;
+
+fetch('jobs.json')
+  .then(r => r.json())
+  .then(jobs => renderJobs(jobs))
+  .catch(() => {
+    document.getElementById('jobList').innerHTML =
+      '<p class="notice">Couldn\'t load jobs right now. Try refreshing the page.</p>';
+  });
+
+function renderJobs(jobs) {
+  const list = document.getElementById('jobList');
+  if (!jobs.length) {
+    list.innerHTML = '<p>No open jobs right now &mdash; check back soon.</p>';
+    return;
+  }
+  list.innerHTML = jobs.map((job, i) => `
+    <div class="card job-card">
+      <h3>${esc(job.title)}</h3>
+      <p>${esc(job.description)}</p>
+      <div class="meta">
+        <span><b>${fmtUGX(job.budget)}</b></span>
+        <span>Proof: <b>${esc(job.proof)}</b></span>
+        <span>Deadline: <b>${esc(job.deadline)}</b></span>
+        <span>Posted by: <b>${esc(job.bossName)}</b></span>
+      </div>
+      <button class="btn btn-primary" onclick="openApply(${i})">Apply</button>
+    </div>
+  `).join('');
+  window.__jobs = jobs;
+}
+
+function openApply(i) {
+  currentJob = window.__jobs[i];
+  document.getElementById('applyJobTitle').textContent = currentJob.title;
+  document.getElementById('applyOverlay').style.display = 'flex';
+}
+
+document.getElementById('applyCancel').addEventListener('click', () => {
+  document.getElementById('applyOverlay').style.display = 'none';
+});
+
+document.getElementById('applyForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const name = document.getElementById('workerName').value.trim();
+  const number = document.getElementById('workerNumber').value.trim();
+  const skill = document.getElementById('workerSkill').value.trim();
+
+  const message =
+`Hi, I'd like to apply for "${currentJob.title}" via UGXGIG.
+
+Name: ${name}
+Number: ${number}
+Relevant skill/experience: ${skill}`;
+
+  openDirectChat(currentJob.bossNumber, message);
+  document.getElementById('applyOverlay').style.display = 'none';
+});
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+</script>
+
+</body>
+</html>
