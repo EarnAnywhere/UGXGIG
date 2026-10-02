@@ -63,10 +63,24 @@
           <input type="text" id="pTxid" required placeholder="Paste the mobile money transaction ID">
         </div>
 
-        <button type="submit" class="btn btn-primary">Play &mdash; join the group</button>
-        <p class="hint" style="margin-top:10px;">This copies your details and opens the game's WhatsApp group. Paste and send once you're in.</p>
-        <span class="copied-flag" id="entryCopied">&#10003; Copied &mdash; paste it in the group chat</span>
+        <button type="submit" class="btn btn-primary" id="entrySubmitBtn">Submit for approval</button>
+        <p class="hint" style="margin-top:10px;">We verify your payment, then unlock the game's WhatsApp group.</p>
       </form>
+
+      <div id="entryWaiting" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; margin-bottom:6px;">Checking your payment&hellip;</p>
+        <p class="hint">This is usually quick. Don't close this page.</p>
+      </div>
+
+      <div id="entryDenied" class="notice" style="display:none; margin-top:18px;">
+        Your payment couldn't be verified. Double-check the transaction ID and try again, or message us directly.
+      </div>
+
+      <div id="entryApproved" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; color:var(--green); margin-bottom:10px;">&#10003; Approved!</p>
+        <button type="button" class="btn btn-primary" id="entryJoinBtn">Play &mdash; join the group</button>
+        <p class="hint" style="margin-top:10px;">This copies your details and opens the game's WhatsApp group. Paste and send once you're in.</p>
+      </div>
 
     </div>
   </section>
@@ -123,10 +137,24 @@
           <input type="text" id="tTxid" required placeholder="Paste the mobile money transaction ID">
         </div>
 
-        <button type="submit" class="btn btn-primary">Buy seat &mdash; join tournament group</button>
-        <p class="hint" style="margin-top:10px;">Copies your details and opens the tournament group. Paste and send once you're in.</p>
-        <span class="copied-flag" id="tourneyCopied">&#10003; Copied &mdash; paste it in the group chat</span>
+        <button type="submit" class="btn btn-primary">Submit for approval</button>
+        <p class="hint" style="margin-top:10px;">We verify your payment, then unlock the tournament group.</p>
       </form>
+
+      <div id="tourneyWaiting" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; margin-bottom:6px;">Checking your payment&hellip;</p>
+        <p class="hint">This is usually quick. Don't close this page.</p>
+      </div>
+
+      <div id="tourneyDenied" class="notice" style="display:none; margin-top:18px;">
+        Your payment couldn't be verified. Double-check the transaction ID and try again, or message us directly.
+      </div>
+
+      <div id="tourneyApproved" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; color:var(--green); margin-bottom:10px;">&#10003; Approved!</p>
+        <button type="button" class="btn btn-primary" id="tourneyJoinBtn">Join tournament group</button>
+        <p class="hint" style="margin-top:10px;">Copies your details and opens the tournament group. Paste and send once you're in.</p>
+      </div>
     </div>
   </section>
 </main>
@@ -136,7 +164,22 @@
 </footer>
 
 <script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const approvalsRef = firebase.database().ref("approvals");
+
 let activeTier = 'tier3';
 let activeGame = null;
 
@@ -192,6 +235,23 @@ function selectGame(gKey) {
   document.getElementById('entryCopied').classList.remove('show');
 }
 
+function watchApproval(reqKey, onApproved, onDenied, waitingEl, formEl) {
+  formEl.style.display = 'none';
+  waitingEl.style.display = 'block';
+  approvalsRef.child(reqKey).child('status').on('value', snap => {
+    const status = snap.val();
+    if (status === 'approved') {
+      approvalsRef.child(reqKey).child('status').off();
+      waitingEl.style.display = 'none';
+      onApproved();
+    } else if (status === 'denied') {
+      approvalsRef.child(reqKey).child('status').off();
+      waitingEl.style.display = 'none';
+      onDenied();
+    }
+  });
+}
+
 document.getElementById('entryForm').addEventListener('submit', function (e) {
   e.preventDefault();
   const name = document.getElementById('pName').value.trim();
@@ -207,8 +267,29 @@ Number: ${number}
 Entry paid: ${fmtUGX(t.entry)}
 Transaction ID: ${txid}`;
 
-  openGroupWithMessage(activeGame, message);
-  document.getElementById('entryCopied').classList.add('show');
+  const req = {
+    type: 'game',
+    game: GAME_NAMES[activeGame],
+    tier: t.label,
+    name, number, txid,
+    amount: t.entry,
+    status: 'pending',
+    createdAt: Date.now()
+  };
+
+  approvalsRef.push(req).then(ref => {
+    document.getElementById('entryDenied').style.display = 'none';
+    watchApproval(
+      ref.key,
+      () => {
+        document.getElementById('entryApproved').style.display = 'block';
+        document.getElementById('entryJoinBtn').onclick = () => openGroupWithMessage(activeGame, message);
+      },
+      () => { document.getElementById('entryDenied').style.display = 'block'; document.getElementById('entryForm').style.display = 'block'; },
+      document.getElementById('entryWaiting'),
+      document.getElementById('entryForm')
+    );
+  });
 });
 
 document.getElementById('tourneyForm').addEventListener('submit', function (e) {
@@ -225,8 +306,29 @@ Number: ${number}
 Seat fee paid: ${fmtUGX(10000)}
 Transaction ID: ${txid}`;
 
-  openGroupWithMessage('tournament', message);
-  document.getElementById('tourneyCopied').classList.add('show');
+  const req = {
+    type: 'tournament',
+    game: 'Daily ticket tournament',
+    tier: '-',
+    name, number, txid,
+    amount: 10000,
+    status: 'pending',
+    createdAt: Date.now()
+  };
+
+  approvalsRef.push(req).then(ref => {
+    document.getElementById('tourneyDenied').style.display = 'none';
+    watchApproval(
+      ref.key,
+      () => {
+        document.getElementById('tourneyApproved').style.display = 'block';
+        document.getElementById('tourneyJoinBtn').onclick = () => openGroupWithMessage('tournament', message);
+      },
+      () => { document.getElementById('tourneyDenied').style.display = 'block'; document.getElementById('tourneyForm').style.display = 'block'; },
+      document.getElementById('tourneyWaiting'),
+      document.getElementById('tourneyForm')
+    );
+  });
 });
 
 renderTabs();

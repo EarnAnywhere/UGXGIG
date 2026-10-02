@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin — UGXGIG</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .req-card{ margin-bottom:14px; padding:18px; }
+  .req-card .meta{ display:flex; flex-wrap:wrap; gap:10px 18px; font-size:13px; color:var(--ink-soft); margin:10px 0; }
+  .req-card .meta b{ color:var(--ink); }
+  .req-actions{ display:flex; gap:10px; margin-top:12px; }
+  .req-actions .btn{ flex:1; }
+  .btn-deny{ background:var(--red); border-color:var(--red); color:#fff; }
+  .pin-gate{ max-width:320px; margin:80px auto; text-align:center; }
+  .empty{ text-align:center; color:var(--ink-soft); padding:40px 0; }
+  .badge{ display:inline-block; font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; }
+  .badge.game{ background:var(--yellow); color:var(--ink); }
+  .badge.tournament{ background:var(--green); color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <a href="index.html" class="brand">UGX<span>GIG</span></a>
+    <nav><a href="index.html">Back to site</a></nav>
+  </div>
+</div>
+
+<div id="pinGate" class="wrap pin-gate">
+  <h2 style="margin-bottom:14px;">Admin access</h2>
+  <div class="field">
+    <input type="password" id="pinInput" placeholder="Enter PIN" inputmode="numeric">
+  </div>
+  <button class="btn btn-primary" id="pinSubmit">Enter</button>
+  <p id="pinError" class="hint" style="color:var(--red); display:none;">Wrong PIN</p>
+</div>
+
+<main id="adminMain" class="wrap" style="display:none; padding-top:28px;">
+  <h1 style="font-size:24px; margin-bottom:6px;">Pending approvals</h1>
+  <p class="sub" style="margin-bottom:20px;">New payment requests show up here live. Approve to unlock the player's game group, or deny if the transaction doesn't check out.</p>
+  <div id="pendingList"></div>
+  <div id="emptyState" class="empty">No pending requests right now.</div>
+</main>
+
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// Change this PIN to whatever you like — it's a basic deterrent, not real security.
+const ADMIN_PIN = "2580";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const approvalsRef = firebase.database().ref("approvals");
+
+document.getElementById('pinSubmit').addEventListener('click', checkPin);
+document.getElementById('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+
+function checkPin() {
+  const val = document.getElementById('pinInput').value;
+  if (val === ADMIN_PIN) {
+    document.getElementById('pinGate').style.display = 'none';
+    document.getElementById('adminMain').style.display = 'block';
+    startListening();
+  } else {
+    document.getElementById('pinError').style.display = 'block';
+  }
+}
+
+function startListening() {
+  approvalsRef.orderByChild('status').equalTo('pending').on('value', snap => {
+    const list = document.getElementById('pendingList');
+    const empty = document.getElementById('emptyState');
+    const items = [];
+    snap.forEach(child => items.push({ key: child.key, ...child.val() }));
+    items.sort((a, b) => a.createdAt - b.createdAt);
+
+    if (!items.length) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = items.map(r => `
+      <div class="card req-card">
+        <span class="badge ${r.type}">${r.type === 'tournament' ? 'Tournament' : 'Game'}</span>
+        <h3 style="font-size:17px; margin-top:8px;">${esc(r.game)} ${r.tier && r.tier !== '-' ? '· ' + esc(r.tier) : ''}</h3>
+        <div class="meta">
+          <span>Name: <b>${esc(r.name)}</b></span>
+          <span>Number: <b>${esc(r.number)}</b></span>
+          <span>Amount: <b>${fmtUGX(r.amount)}</b></span>
+          <span>Txn ID: <b>${esc(r.txid)}</b></span>
+        </div>
+        <div class="req-actions">
+          <button class="btn btn-primary" onclick="decide('${r.key}','approved')">Approve</button>
+          <button class="btn btn-deny" onclick="decide('${r.key}','denied')">Deny</button>
+        </div>
+      </div>
+    `).join('');
+  });
+}
+
+function decide(key, status) {
+  approvalsRef.child(key).update({ status, decidedAt: Date.now() });
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : s;
+  return d.innerHTML;
+}
+</script>
+
+</body>
+</html>
