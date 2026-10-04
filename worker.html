@@ -17,6 +17,7 @@
       <a href="worker.html" class="current">Find work</a>
       <a href="games.html">Games</a>
       <a href="referral.html">Refer</a>
+      <a href="my-jobs.html">My applications</a>
     </nav>
   </div>
 </div>
@@ -155,6 +156,12 @@ document.getElementById('applyForm').addEventListener('submit', function (e) {
   const link = document.getElementById('workerLink');
   link.href = `worker-job.html?jobId=${currentJobId}&appId=${appRef.key}`;
   link.textContent = 'Open my application page';
+
+  try {
+    const list = JSON.parse(localStorage.getItem('ugxgig_my_applications') || '[]');
+    list.unshift({ jobId: currentJobId, appId: appRef.key, title: currentJob.title, savedAt: Date.now() });
+    localStorage.setItem('ugxgig_my_applications', JSON.stringify(list));
+  } catch (err) {}
 });
 
 function esc(s) {
