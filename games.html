@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Games — UGXGIG</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <a href="index.html" class="brand">UGX<span>GIG</span></a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="boss.html">Post a job</a>
+      <a href="worker.html">Find work</a>
+      <a href="games.html" class="current">Games</a>
+      <a href="referral.html">Refer</a>
+      <a href="my-jobs.html">My jobs</a>
+    </nav>
+  </div>
+</div>
+
+<header class="page-head">
+  <div class="wrap">
+    <p class="kicker">Entry-fee games</p>
+    <h1>Pick a tier, pick a game</h1>
+    <p class="sub">Pay the entry fee, paste your transaction ID, and we'll add you to that game's WhatsApp group.</p>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+
+      <div class="tier-tabs" id="tierTabs"></div>
+
+      <div id="tierInfo" class="ticket" style="padding:20px; margin-bottom:20px;"></div>
+
+      <div id="gameChips"></div>
+
+      <form id="entryForm" class="ticket" style="padding:22px; display:none; margin-top:18px;">
+        <h3 id="selectedGameTitle" style="font-size:19px; margin-bottom:16px;"></h3>
+
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="pName">Your name</label>
+            <input type="text" id="pName" required>
+          </div>
+          <div class="field">
+            <label for="pNumber">Your number</label>
+            <input type="tel" id="pNumber" required placeholder="07XXXXXXXX">
+          </div>
+        </div>
+
+        <div class="pay-box">
+          <p style="margin:0 0 6px; font-size:14px; color:var(--ink);">Send the entry fee to:</p>
+          <div class="num">0707281801</div>
+        </div>
+
+        <div class="field">
+          <label for="pTxid">Transaction ID</label>
+          <input type="text" id="pTxid" required placeholder="Paste the mobile money transaction ID">
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="entrySubmitBtn">Submit for approval</button>
+        <p class="hint" style="margin-top:10px;">We verify your payment, then unlock the game's WhatsApp group.</p>
+      </form>
+
+      <div id="entryWaiting" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; margin-bottom:6px;">Checking your payment&hellip;</p>
+        <p class="hint">This is usually quick. Don't close this page.</p>
+      </div>
+
+      <div id="entryDenied" class="notice" style="display:none; margin-top:18px;">
+        Your payment couldn't be verified. Double-check the transaction ID and try again, or message us directly.
+      </div>
+
+      <div id="entryApproved" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; color:var(--green); margin-bottom:10px;">&#10003; Approved!</p>
+        <a href="#" id="entryJoinBtn" class="btn btn-primary">Play now</a>
+        <p class="hint" style="margin-top:10px;" id="entryJoinHint"></p>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="tournament">
+    <div class="wrap">
+      <h2 style="font-size:24px; margin-bottom:6px;">Daily ticket tournament</h2>
+      <p class="sub" style="margin-bottom:18px;">Runs every day, 7am&ndash;7pm. Buy a seat, collect tickets by playing, and climb the leaderboard.</p>
+
+      <div class="stat-row">
+        <div class="stat"><b>10,000</b>Seat (UGX)</div>
+        <div class="stat"><b>7am&ndash;7pm</b>Window</div>
+        <div class="stat"><b>10</b>Min. players to start</div>
+      </div>
+
+      <div class="grid grid-2" style="margin-bottom:20px;">
+        <div class="card">
+          <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;">40%</div>
+          <div style="font-size:13px; color:var(--ink-soft);">1st place</div>
+        </div>
+        <div class="card">
+          <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;">25%</div>
+          <div style="font-size:13px; color:var(--ink-soft);">2nd place</div>
+        </div>
+        <div class="card">
+          <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;">15%</div>
+          <div style="font-size:13px; color:var(--ink-soft);">3rd place</div>
+        </div>
+        <div class="card">
+          <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;">20%</div>
+          <div style="font-size:13px; color:var(--ink-soft);">UGXGIG</div>
+        </div>
+      </div>
+
+      <form id="tourneyForm" class="ticket" style="padding:22px;">
+        <div class="grid grid-2">
+          <div class="field">
+            <label for="tName">Your name</label>
+            <input type="text" id="tName" required>
+          </div>
+          <div class="field">
+            <label for="tNumber">Your number</label>
+            <input type="tel" id="tNumber" required placeholder="07XXXXXXXX">
+          </div>
+        </div>
+
+        <div class="pay-box">
+          <p style="margin:0 0 6px; font-size:14px; color:var(--ink);">Send the 10,000 UGX seat fee to:</p>
+          <div class="num">0707281801</div>
+        </div>
+
+        <div class="field">
+          <label for="tTxid">Transaction ID</label>
+          <input type="text" id="tTxid" required placeholder="Paste the mobile money transaction ID">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit for approval</button>
+        <p class="hint" style="margin-top:10px;">We verify your payment, then unlock the tournament group.</p>
+      </form>
+
+      <div id="tourneyWaiting" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; margin-bottom:6px;">Checking your payment&hellip;</p>
+        <p class="hint">This is usually quick. Don't close this page.</p>
+      </div>
+
+      <div id="tourneyDenied" class="notice" style="display:none; margin-top:18px;">
+        Your payment couldn't be verified. Double-check the transaction ID and try again, or message us directly.
+      </div>
+
+      <div id="tourneyApproved" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; color:var(--green); margin-bottom:10px;">&#10003; Approved!</p>
+        <button type="button" class="btn btn-primary" id="tourneyJoinBtn">Join tournament group</button>
+        <p class="hint" style="margin-top:10px;">Copies your details and opens the tournament group. Paste and send once you're in.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">UGXGIG &mdash; every gig ends in a WhatsApp chat.</div>
+</footer>
+
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const approvalsRef = firebase.database().ref("approvals");
+
+let activeTier = 'tier3';
+let activeGame = null;
+
+function renderTabs() {
+  const tabs = document.getElementById('tierTabs');
+  tabs.innerHTML = Object.keys(TIERS).map(key => {
+    const t = TIERS[key];
+    return `<button type="button" class="tier-tab ${key === activeTier ? 'active' : ''}" onclick="selectTier('${key}')">
+      <strong>${t.label}</strong>
+      <span>${fmtUGX(t.entry)} entry &middot; ${t.players} players</span>
+    </button>`;
+  }).join('');
+}
+
+function selectTier(key) {
+  activeTier = key;
+  activeGame = null;
+  document.getElementById('entryForm').style.display = 'none';
+  renderTabs();
+  renderTierInfo();
+  renderGames();
+}
+
+function renderTierInfo() {
+  const t = TIERS[activeTier];
+  let killLine = t.killPot
+    ? `<div class="stat"><b>${fmtUGX(t.killPot)}</b>Kill pot (1,000/kill)</div>`
+    : '';
+  document.getElementById('tierInfo').innerHTML = `
+    <p style="margin:0 0 4px; font-size:14px; color:var(--ink-soft);">${t.style}</p>
+    <div class="stat-row">
+      <div class="stat"><b>${fmtUGX(t.entry)}</b>Entry fee</div>
+      <div class="stat"><b>${t.players}</b>Players</div>
+      <div class="stat"><b>${fmtUGX(t.payout)}</b>Winner payout</div>
+      ${killLine}
+    </div>
+  `;
+}
+
+function renderGames() {
+  const t = TIERS[activeTier];
+  document.getElementById('gameChips').innerHTML = t.games.map(gKey => `
+    <button type="button" class="game-chip" onclick="selectGame('${gKey}')">${GAME_NAMES[gKey]}</button>
+  `).join('');
+}
+
+function selectGame(gKey) {
+  activeGame = gKey;
+  document.querySelectorAll('.game-chip').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('selectedGameTitle').textContent = GAME_NAMES[gKey] + ' — entry form';
+  document.getElementById('entryForm').style.display = 'block';
+  document.getElementById('entryCopied').classList.remove('show');
+}
+
+function watchApproval(reqKey, onApproved, onDenied, waitingEl, formEl) {
+  formEl.style.display = 'none';
+  waitingEl.style.display = 'block';
+  approvalsRef.child(reqKey).child('status').on('value', snap => {
+    const status = snap.val();
+    if (status === 'approved') {
+      approvalsRef.child(reqKey).child('status').off();
+      waitingEl.style.display = 'none';
+      onApproved();
+    } else if (status === 'denied') {
+      approvalsRef.child(reqKey).child('status').off();
+      waitingEl.style.display = 'none';
+      onDenied();
+    }
+  });
+}
+
+document.getElementById('entryForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const name = document.getElementById('pName').value.trim();
+  const number = document.getElementById('pNumber').value.trim();
+  const txid = document.getElementById('pTxid').value.trim();
+  const t = TIERS[activeTier];
+
+  const message =
+`UGXGIG — ${GAME_NAMES[activeGame]} (${t.label})
+
+Name: ${name}
+Number: ${number}
+Entry paid: ${fmtUGX(t.entry)}
+Transaction ID: ${txid}`;
+
+  const req = {
+    type: 'game',
+    game: GAME_NAMES[activeGame],
+    tier: t.label,
+    name, number, txid,
+    amount: t.entry,
+    status: 'pending',
+    createdAt: Date.now()
+  };
+
+  approvalsRef.push(req).then(ref => {
+    document.getElementById('entryDenied').style.display = 'none';
+    watchApproval(
+      ref.key,
+      () => {
+        document.getElementById('entryApproved').style.display = 'block';
+        const joinBtn = document.getElementById('entryJoinBtn');
+        const joinHint = document.getElementById('entryJoinHint');
+        const gameUrl = GAME_URLS[activeGame];
+
+        if (gameUrl) {
+          joinBtn.textContent = 'Play now';
+          joinBtn.href = `${gameUrl}?name=${encodeURIComponent(name)}`;
+          joinBtn.target = '_blank';
+          joinBtn.onclick = null;
+          joinHint.textContent = "Opens the game. Create or join a match, then wait there for your opponent.";
+        } else {
+          joinBtn.textContent = 'Play — join the group';
+          joinBtn.href = '#';
+          joinBtn.onclick = (e) => { e.preventDefault(); openGroupWithMessage(activeGame, message); };
+          joinHint.textContent = "This copies your details and opens the game's WhatsApp group. Paste and send once you're in.";
+        }
+      },
+      () => { document.getElementById('entryDenied').style.display = 'block'; document.getElementById('entryForm').style.display = 'block'; },
+      document.getElementById('entryWaiting'),
+      document.getElementById('entryForm')
+    );
+  });
+});
+
+document.getElementById('tourneyForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const name = document.getElementById('tName').value.trim();
+  const number = document.getElementById('tNumber').value.trim();
+  const txid = document.getElementById('tTxid').value.trim();
+
+  const message =
+`UGXGIG — Daily ticket tournament seat
+
+Name: ${name}
+Number: ${number}
+Seat fee paid: ${fmtUGX(10000)}
+Transaction ID: ${txid}`;
+
+  const req = {
+    type: 'tournament',
+    game: 'Daily ticket tournament',
+    tier: '-',
+    name, number, txid,
+    amount: 10000,
+    status: 'pending',
+    createdAt: Date.now()
+  };
+
+  approvalsRef.push(req).then(ref => {
+    document.getElementById('tourneyDenied').style.display = 'none';
+    watchApproval(
+      ref.key,
+      () => {
+        document.getElementById('tourneyApproved').style.display = 'block';
+        document.getElementById('tourneyJoinBtn').onclick = () => openGroupWithMessage('tournament', message);
+      },
+      () => { document.getElementById('tourneyDenied').style.display = 'block'; document.getElementById('tourneyForm').style.display = 'block'; },
+      document.getElementById('tourneyWaiting'),
+      document.getElementById('tourneyForm')
+    );
+  });
+});
+
+renderTabs();
+renderTierInfo();
+renderGames();
+</script>
+
+</body>
+</html>
