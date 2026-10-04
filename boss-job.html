@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Job — UGXGIG</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .app-card{ margin-bottom:14px; padding:18px; }
+  .app-card .meta{ display:flex; flex-wrap:wrap; gap:10px 16px; font-size:13px; color:var(--ink-soft); margin:10px 0; }
+  .app-card .meta b{ color:var(--ink); }
+  .app-actions{ display:flex; gap:10px; margin-top:12px; }
+  .app-actions .btn{ flex:1; }
+  .btn-deny{ background:var(--red); border-color:var(--red); color:#fff; }
+  .status-tag{ display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:4px; margin-bottom:8px; }
+  .status-tag.applied{ background:#eee; }
+  .status-tag.hired{ background:var(--yellow); }
+  .status-tag.proof_submitted{ background:var(--green-soft); color:var(--green); }
+  .status-tag.rejected{ background:var(--red-soft); color:var(--red); }
+  .status-tag.payout_requested{ background:var(--green); color:#fff; }
+  .proof-box{ background:var(--paper); border:1px dashed var(--line); border-radius:6px; padding:12px; font-size:14px; margin:10px 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <a href="index.html" class="brand">UGX<span>GIG</span></a>
+    <nav><a href="index.html">Home</a></nav>
+  </div>
+</div>
+
+<header class="page-head">
+  <div class="wrap">
+    <p class="kicker">Your job</p>
+    <h1 id="jobTitle">Loading&hellip;</h1>
+    <p class="sub" id="jobMeta"></p>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <h2 style="font-size:19px; margin-bottom:14px;">Applicants</h2>
+      <div id="appList"></div>
+      <p id="emptyApps" class="hint" style="display:none;">No applicants yet — check back soon.</p>
+    </div>
+  </section>
+</main>
+
+<!-- Pay modal -->
+<div id="payOverlay" style="display:none; position:fixed; inset:0; background:rgba(26,29,21,0.6); z-index:50; align-items:center; justify-content:center; padding:20px;">
+  <div class="card" style="max-width:420px; width:100%;">
+    <h3 style="font-size:18px; margin-bottom:14px;">Confirm &amp; pay worker</h3>
+    <form id="payForm">
+      <div class="field">
+        <label for="payName">Worker name</label>
+        <input type="text" id="payName" required>
+      </div>
+      <div class="field">
+        <label for="payNumber">Worker number</label>
+        <input type="tel" id="payNumber" required>
+      </div>
+      <div class="field" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="payConfirm" required style="width:auto;">
+        <label for="payConfirm" style="margin:0;">I confirm this worker completed the job</label>
+      </div>
+      <div class="grid grid-2">
+        <button type="button" class="btn btn-ghost" id="payCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Send to admin</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">UGXGIG &mdash; post it, get it done, pay it out.</div>
+</footer>
+
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const jobId = new URLSearchParams(location.search).get('id');
+let jobRef = null;
+let jobData = null;
+let payTargetAppId = null;
+
+if (!jobId) {
+  document.getElementById('jobTitle').textContent = 'No job specified';
+} else {
+  jobRef = db.ref('jobs/' + jobId);
+  jobRef.on('value', snap => {
+    jobData = snap.val();
+    if (!jobData) {
+      document.getElementById('jobTitle').textContent = 'Job not found';
+      return;
+    }
+    document.getElementById('jobTitle').textContent = jobData.title;
+    document.getElementById('jobMeta').textContent =
+      `${fmtUGX(jobData.budget)} · Deadline ${jobData.deadline} · Proof needed: ${jobData.proof}`;
+    renderApplicants(jobData.applicants || {});
+  });
+}
+
+function renderApplicants(applicants) {
+  const list = document.getElementById('appList');
+  const empty = document.getElementById('emptyApps');
+  const entries = Object.entries(applicants);
+
+  if (!entries.length) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  list.innerHTML = entries.map(([appId, a]) => {
+    let actions = '';
+    if (a.status === 'applied') {
+      actions = `
+        <div class="app-actions">
+          <button class="btn btn-primary" onclick="setStatus('${appId}','hired')">Hire</button>
+          <button class="btn btn-deny" onclick="setStatus('${appId}','rejected')">Reject</button>
+        </div>`;
+    } else if (a.status === 'hired') {
+      actions = `<p class="hint">Waiting for them to submit proof of completion.</p>`;
+    } else if (a.status === 'proof_submitted') {
+      actions = `
+        <div class="proof-box"><b>Proof submitted:</b><br>${esc(a.proofText || '')}</div>
+        <button class="btn btn-primary" onclick="openPay('${appId}','${esc(a.name)}','${esc(a.number)}')">Pay worker</button>`;
+    } else if (a.status === 'payout_requested') {
+      actions = `<p class="hint">Sent to admin — payment is being processed.</p>`;
+    }
+
+    return `
+      <div class="card app-card">
+        <span class="status-tag ${a.status}">${a.status.replace('_',' ')}</span>
+        <h3 style="font-size:17px;">${esc(a.name)}</h3>
+        <div class="meta">
+          <span>Number: <b>${esc(a.number)}</b></span>
+          <span>Skill: <b>${esc(a.skill)}</b></span>
+        </div>
+        ${actions}
+      </div>`;
+  }).join('');
+}
+
+function setStatus(appId, status) {
+  jobRef.child('applicants/' + appId).update({ status });
+}
+
+function openPay(appId, name, number) {
+  payTargetAppId = appId;
+  document.getElementById('payName').value = name;
+  document.getElementById('payNumber').value = number;
+  document.getElementById('payConfirm').checked = false;
+  document.getElementById('payOverlay').style.display = 'flex';
+}
+
+document.getElementById('payCancel').addEventListener('click', () => {
+  document.getElementById('payOverlay').style.display = 'none';
+});
+
+document.getElementById('payForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const name = document.getElementById('payName').value.trim();
+  const number = document.getElementById('payNumber').value.trim();
+
+  db.ref('payouts').push({
+    type: 'job',
+    jobId,
+    applicantId: payTargetAppId,
+    jobTitle: jobData.title,
+    workerName: name,
+    workerNumber: number,
+    amount: jobData.budget,
+    status: 'pending',
+    createdAt: Date.now()
+  }).then(() => {
+    jobRef.child('applicants/' + payTargetAppId).update({ status: 'payout_requested' });
+    document.getElementById('payOverlay').style.display = 'none';
+  });
+});
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : s;
+  return d.innerHTML;
+}
+</script>
+
+</body>
+</html>

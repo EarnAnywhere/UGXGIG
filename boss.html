@@ -25,7 +25,7 @@
   <div class="wrap">
     <p class="kicker">For bosses</p>
     <h1>Post a job</h1>
-    <p class="sub">Fill in the details below, pay the worker budget plus the host fee, then send it to us on WhatsApp.</p>
+    <p class="sub">Fill in the details below, pay the worker budget plus the host fee, then submit for approval.</p>
   </div>
 </header>
 
@@ -82,45 +82,87 @@
           <input type="text" id="txid" required placeholder="Paste the mobile money transaction ID">
         </div>
 
-        <button type="submit" class="btn btn-primary">Continue to WhatsApp</button>
+        <button type="submit" class="btn btn-primary">Submit for approval</button>
       </form>
 
-      <p id="errMsg" class="notice" style="display:none; margin-top:14px;"></p>
+      <div id="waitingBox" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; margin-bottom:6px;">Checking your payment&hellip;</p>
+        <p class="hint">This is usually quick. Don't close this page.</p>
+      </div>
+
+      <div id="deniedBox" class="notice" style="display:none; margin-top:14px;"></div>
+
+      <div id="approvedBox" class="ticket" style="padding:22px; display:none; margin-top:18px; text-align:center;">
+        <p style="font-weight:600; color:var(--green); margin-bottom:10px;">&#10003; Job approved and live!</p>
+        <p class="hint" style="margin-bottom:14px;">Save this link — it's how you'll see applicants and pay the worker when the job's done. We can't send it to you again.</p>
+        <a href="#" id="jobLink" class="btn btn-primary" target="_blank"></a>
+      </div>
     </div>
   </section>
 </main>
 
 <footer>
-  <div class="wrap">UGXGIG &mdash; every gig ends in a WhatsApp chat.</div>
+  <div class="wrap">UGXGIG &mdash; post it, get it done, pay it out.</div>
 </footer>
 
 <script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const jobsRef = firebase.database().ref("jobs");
+
 document.getElementById('bossForm').addEventListener('submit', function (e) {
   e.preventDefault();
 
-  const title = document.getElementById('title').value.trim();
-  const description = document.getElementById('description').value.trim();
-  const proof = document.getElementById('proof').value.trim();
-  const budget = document.getElementById('budget').value.trim();
-  const deadline = document.getElementById('deadline').value;
-  const bossName = document.getElementById('bossName').value.trim();
-  const bossNumber = document.getElementById('bossNumber').value.trim();
-  const txid = document.getElementById('txid').value.trim();
+  const job = {
+    title: document.getElementById('title').value.trim(),
+    description: document.getElementById('description').value.trim(),
+    proof: document.getElementById('proof').value.trim(),
+    budget: Number(document.getElementById('budget').value),
+    deadline: document.getElementById('deadline').value,
+    bossName: document.getElementById('bossName').value.trim(),
+    bossNumber: document.getElementById('bossNumber').value.trim(),
+    txid: document.getElementById('txid').value.trim(),
+    status: 'pending_approval',
+    createdAt: Date.now(),
+    applicants: {}
+  };
 
-  const message =
-`New job posted on UGXGIG
+  jobsRef.push(job).then(ref => {
+    document.getElementById('bossForm').style.display = 'none';
+    document.getElementById('waitingBox').style.display = 'block';
 
-Title: ${title}
-Description: ${description}
-Proof required: ${proof}
-Worker budget: ${fmtUGX(Number(budget))}
-Deadline: ${deadline}
-Boss name: ${bossName}
-Boss number: ${bossNumber}
-Transaction ID: ${txid}`;
-
-  openDirectChat(ADMIN_WA_NUMBER, message);
+    ref.child('status').on('value', snap => {
+      const status = snap.val();
+      if (status === 'approved') {
+        ref.child('status').off();
+        document.getElementById('waitingBox').style.display = 'none';
+        document.getElementById('approvedBox').style.display = 'block';
+        const link = document.getElementById('jobLink');
+        const url = `boss-job.html?id=${ref.key}`;
+        link.href = url;
+        link.textContent = 'Open my job page';
+      } else if (status === 'rejected') {
+        ref.child('status').off();
+        document.getElementById('waitingBox').style.display = 'none';
+        document.getElementById('deniedBox').style.display = 'block';
+        document.getElementById('deniedBox').textContent =
+          "Your payment couldn't be verified. Double-check the transaction ID and try posting again, or message us directly.";
+        document.getElementById('bossForm').style.display = 'block';
+      }
+    });
+  });
 });
 </script>
 

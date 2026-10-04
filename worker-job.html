@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Application — UGXGIG</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .status-tag{ display:inline-block; font-size:12px; font-weight:700; padding:4px 10px; border-radius:4px; margin-bottom:10px; }
+  .status-tag.applied{ background:#eee; }
+  .status-tag.hired{ background:var(--yellow); }
+  .status-tag.proof_submitted{ background:var(--green-soft); color:var(--green); }
+  .status-tag.rejected{ background:var(--red-soft); color:var(--red); }
+  .status-tag.payout_requested{ background:var(--green); color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <a href="index.html" class="brand">UGX<span>GIG</span></a>
+    <nav><a href="index.html">Home</a></nav>
+  </div>
+</div>
+
+<header class="page-head">
+  <div class="wrap">
+    <p class="kicker">Your application</p>
+    <h1 id="jobTitle">Loading&hellip;</h1>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="wrap">
+      <div class="card" id="statusCard" style="padding:22px;">
+        <p>Loading your application status&hellip;</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">UGXGIG &mdash; post it, get it done, pay it out.</div>
+</footer>
+
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const params = new URLSearchParams(location.search);
+const jobId = params.get('jobId');
+const appId = params.get('appId');
+
+if (!jobId || !appId) {
+  document.getElementById('statusCard').innerHTML = '<p>Invalid link.</p>';
+} else {
+  const jobRef = db.ref('jobs/' + jobId);
+  jobRef.on('value', snap => {
+    const job = snap.val();
+    if (!job) { document.getElementById('jobTitle').textContent = 'Job not found'; return; }
+    document.getElementById('jobTitle').textContent = job.title;
+    const app = (job.applicants || {})[appId];
+    if (!app) { document.getElementById('statusCard').innerHTML = '<p>Application not found.</p>'; return; }
+    renderStatus(app, job);
+  });
+}
+
+function renderStatus(app, job) {
+  const card = document.getElementById('statusCard');
+  const tag = `<span class="status-tag ${app.status}">${app.status.replace('_',' ')}</span>`;
+
+  if (app.status === 'applied') {
+    card.innerHTML = `${tag}<p>Waiting for the boss to review your application.</p>`;
+  } else if (app.status === 'rejected') {
+    card.innerHTML = `${tag}<p>This boss went with someone else this time. Keep browsing — more jobs are posted regularly.</p>`;
+  } else if (app.status === 'hired') {
+    card.innerHTML = `
+      ${tag}
+      <p style="margin-bottom:14px;">You're hired! Do the job, then submit your proof below: <b>${esc(job.proof)}</b></p>
+      <form id="proofForm">
+        <div class="field">
+          <label for="proofText">Proof (describe it, or paste a photo/drive link)</label>
+          <textarea id="proofText" required placeholder="Describe what you did, or paste a link to proof"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit proof</button>
+      </form>`;
+    document.getElementById('proofForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const proofText = document.getElementById('proofText').value.trim();
+      db.ref(`jobs/${jobId}/applicants/${appId}`).update({ status: 'proof_submitted', proofText, proofAt: Date.now() });
+    });
+  } else if (app.status === 'proof_submitted') {
+    card.innerHTML = `${tag}<p>Proof submitted — waiting for the boss to confirm and release payment.</p>`;
+  } else if (app.status === 'payout_requested') {
+    card.innerHTML = `${tag}<p>The boss confirmed your work — payment is being processed by UGXGIG. You'll receive it on <b>${esc(app.number)}</b> shortly.</p>`;
+  }
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : s;
+  return d.innerHTML;
+}
+</script>
+
+</body>
+</html>

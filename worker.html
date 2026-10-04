@@ -25,7 +25,7 @@
   <div class="wrap">
     <p class="kicker">For workers</p>
     <h1>Find work</h1>
-    <p class="sub">Open gigs below. Apply and you'll be taken straight to the boss's WhatsApp chat.</p>
+    <p class="sub">Open gigs below. Apply, and the boss will review you directly.</p>
   </div>
 </header>
 
@@ -41,7 +41,7 @@
 <div id="applyOverlay" style="display:none; position:fixed; inset:0; background:rgba(26,29,21,0.6); z-index:50; align-items:center; justify-content:center; padding:20px;">
   <div class="card" style="max-width:420px; width:100%; max-height:88vh; overflow-y:auto;">
     <h3 style="font-size:19px; margin-bottom:4px;">Apply for <span id="applyJobTitle"></span></h3>
-    <p style="font-size:13px; color:var(--ink-soft); margin-bottom:18px;">This goes straight to the boss on WhatsApp.</p>
+    <p style="font-size:13px; color:var(--ink-soft); margin-bottom:18px;">The boss will see this and decide whether to hire you.</p>
 
     <form id="applyForm">
       <div class="field">
@@ -58,27 +58,48 @@
       </div>
       <div class="grid grid-2">
         <button type="button" class="btn btn-ghost" id="applyCancel">Cancel</button>
-        <button type="submit" class="btn btn-primary">Continue to WhatsApp</button>
+        <button type="submit" class="btn btn-primary">Apply</button>
       </div>
     </form>
+
+    <div id="applySuccess" style="display:none; text-align:center;">
+      <p style="font-weight:600; color:var(--green); margin-bottom:10px;">&#10003; Application sent!</p>
+      <p class="hint" style="margin-bottom:14px;">Save this link — it's how you'll check your status and submit proof once hired. We can't send it to you again.</p>
+      <a href="#" id="workerLink" class="btn btn-primary" target="_blank"></a>
+    </div>
   </div>
 </div>
 
 <footer>
-  <div class="wrap">UGXGIG &mdash; every gig ends in a WhatsApp chat.</div>
+  <div class="wrap">UGXGIG &mdash; post it, get it done, pay it out.</div>
 </footer>
 
 <script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const jobsRef = firebase.database().ref("jobs");
+
+let currentJobId = null;
 let currentJob = null;
 
-fetch('jobs.json')
-  .then(r => r.json())
-  .then(jobs => renderJobs(jobs))
-  .catch(() => {
-    document.getElementById('jobList').innerHTML =
-      '<p class="notice">Couldn\'t load jobs right now. Try refreshing the page.</p>';
-  });
+jobsRef.orderByChild('status').equalTo('approved').on('value', snap => {
+  const jobs = [];
+  snap.forEach(child => jobs.push({ id: child.key, ...child.val() }));
+  jobs.sort((a, b) => b.createdAt - a.createdAt);
+  renderJobs(jobs);
+});
 
 function renderJobs(jobs) {
   const list = document.getElementById('jobList');
@@ -86,7 +107,7 @@ function renderJobs(jobs) {
     list.innerHTML = '<p>No open jobs right now &mdash; check back soon.</p>';
     return;
   }
-  list.innerHTML = jobs.map((job, i) => `
+  list.innerHTML = jobs.map(job => `
     <div class="card job-card">
       <h3>${esc(job.title)}</h3>
       <p>${esc(job.description)}</p>
@@ -96,15 +117,18 @@ function renderJobs(jobs) {
         <span>Deadline: <b>${esc(job.deadline)}</b></span>
         <span>Posted by: <b>${esc(job.bossName)}</b></span>
       </div>
-      <button class="btn btn-primary" onclick="openApply(${i})">Apply</button>
+      <button class="btn btn-primary" onclick="openApply('${job.id}')">Apply</button>
     </div>
   `).join('');
-  window.__jobs = jobs;
+  window.__jobsById = Object.fromEntries(jobs.map(j => [j.id, j]));
 }
 
-function openApply(i) {
-  currentJob = window.__jobs[i];
+function openApply(jobId) {
+  currentJobId = jobId;
+  currentJob = window.__jobsById[jobId];
   document.getElementById('applyJobTitle').textContent = currentJob.title;
+  document.getElementById('applyForm').style.display = 'block';
+  document.getElementById('applySuccess').style.display = 'none';
   document.getElementById('applyOverlay').style.display = 'flex';
 }
 
@@ -118,15 +142,19 @@ document.getElementById('applyForm').addEventListener('submit', function (e) {
   const number = document.getElementById('workerNumber').value.trim();
   const skill = document.getElementById('workerSkill').value.trim();
 
-  const message =
-`Hi, I'd like to apply for "${currentJob.title}" via UGXGIG.
+  const applicant = {
+    name, number, skill,
+    status: 'applied',
+    appliedAt: Date.now()
+  };
 
-Name: ${name}
-Number: ${number}
-Relevant skill/experience: ${skill}`;
+  const appRef = jobsRef.child(currentJobId).child('applicants').push(applicant);
 
-  openDirectChat(currentJob.bossNumber, message);
-  document.getElementById('applyOverlay').style.display = 'none';
+  document.getElementById('applyForm').style.display = 'none';
+  document.getElementById('applySuccess').style.display = 'block';
+  const link = document.getElementById('workerLink');
+  link.href = `worker-job.html?jobId=${currentJobId}&appId=${appRef.key}`;
+  link.textContent = 'Open my application page';
 });
 
 function esc(s) {

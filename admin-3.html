@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin — UGXGIG</title>
+<link rel="manifest" href="admin-manifest.json">
+<meta name="theme-color" content="#1A1D15">
+<link rel="stylesheet" href="style.css">
+<style>
+  .req-card{ margin-bottom:14px; padding:18px; }
+  .req-card .meta{ display:flex; flex-wrap:wrap; gap:10px 18px; font-size:13px; color:var(--ink-soft); margin:10px 0; }
+  .req-card .meta b{ color:var(--ink); }
+  .req-actions{ display:flex; gap:10px; margin-top:12px; }
+  .req-actions .btn{ flex:1; }
+  .btn-deny{ background:var(--red); border-color:var(--red); color:#fff; }
+  .pin-gate{ max-width:320px; margin:80px auto; text-align:center; }
+  .empty{ text-align:center; color:var(--ink-soft); padding:40px 0; }
+  .badge{ display:inline-block; font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; }
+  .badge.game{ background:var(--yellow); color:var(--ink); }
+  .badge.tournament{ background:var(--green); color:#fff; }
+  .badge.job{ background:#2B5F9E; color:#fff; }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid var(--line); }
+  .tab-btn{ background:none; border:none; padding:10px 6px; font-family:'IBM Plex Sans',sans-serif; font-weight:600;
+            font-size:15px; color:var(--ink-soft); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  .tab-btn.active{ color:var(--ink); border-bottom-color:var(--yellow); }
+  .tab-count{ display:inline-block; background:var(--red); color:#fff; font-size:11px; font-weight:700;
+              border-radius:10px; padding:1px 7px; margin-left:5px; }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <a href="index.html" class="brand">UGX<span>GIG</span></a>
+    <nav><a href="index.html">Back to site</a></nav>
+  </div>
+</div>
+
+<div id="pinGate" class="wrap pin-gate">
+  <h2 style="margin-bottom:14px;">Admin access</h2>
+  <div class="field">
+    <input type="password" id="pinInput" placeholder="Enter PIN" inputmode="numeric">
+  </div>
+  <button class="btn btn-primary" id="pinSubmit">Enter</button>
+  <p id="pinError" class="hint" style="color:var(--red); display:none;">Wrong PIN</p>
+</div>
+
+<main id="adminMain" class="wrap" style="display:none; padding-top:28px;">
+  <h1 style="font-size:24px; margin-bottom:6px;">Admin panel</h1>
+  <p class="sub" style="margin-bottom:14px;">Everything that needs your approval or payout, live.</p>
+
+  <div id="notifyBanner" class="card" style="padding:14px 16px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+    <span style="font-size:14px;">Turn on alerts (sound + vibration) for new requests</span>
+    <button class="btn btn-primary" id="enableNotifyBtn" style="width:auto; padding:9px 16px;">Enable</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="games">Games <span class="tab-count" id="countGames" style="display:none;"></span></button>
+    <button class="tab-btn" data-tab="jobs">Jobs <span class="tab-count" id="countJobs" style="display:none;"></span></button>
+    <button class="tab-btn" data-tab="payouts">Payouts <span class="tab-count" id="countPayouts" style="display:none;"></span></button>
+  </div>
+
+  <div id="panel-games" class="tab-panel active">
+    <div id="gamesList"></div>
+    <div id="gamesEmpty" class="empty">No pending game/tournament requests.</div>
+  </div>
+
+  <div id="panel-jobs" class="tab-panel">
+    <div id="jobsList"></div>
+    <div id="jobsEmpty" class="empty">No pending job postings.</div>
+  </div>
+
+  <div id="panel-payouts" class="tab-panel">
+    <div id="payoutsList"></div>
+    <div id="payoutsEmpty" class="empty">No pending payouts.</div>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// Change this PIN to whatever you like — it's a basic deterrent, not real security.
+const ADMIN_PIN = "2580";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const approvalsRef = db.ref("approvals");
+const jobsRef = db.ref("jobs");
+const payoutsRef = db.ref("payouts");
+
+document.getElementById('pinSubmit').addEventListener('click', checkPin);
+document.getElementById('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+
+function checkPin() {
+  const val = document.getElementById('pinInput').value;
+  if (val === ADMIN_PIN) {
+    document.getElementById('pinGate').style.display = 'none';
+    document.getElementById('adminMain').style.display = 'block';
+    setupNotifyButton();
+    startGamesListener();
+    startJobsListener();
+    startPayoutsListener();
+  } else {
+    document.getElementById('pinError').style.display = 'block';
+  }
+}
+
+// ---- Tabs ----
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---- Notifications ----
+let swRegistration = null;
+let notifyEnabled = false;
+
+function setupNotifyButton() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    document.getElementById('notifyBanner').style.display = 'none';
+    return;
+  }
+  navigator.serviceWorker.register('sw-admin.js').then(reg => {
+    swRegistration = reg;
+    if (Notification.permission === 'granted') {
+      notifyEnabled = true;
+      document.getElementById('notifyBanner').style.display = 'none';
+    }
+  });
+  document.getElementById('enableNotifyBtn').addEventListener('click', () => {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        notifyEnabled = true;
+        document.getElementById('notifyBanner').style.display = 'none';
+        beep();
+        showSystemNotification('UGXGIG Admin', { body: "Alerts are on — you'll hear this whenever a new request comes in." });
+      } else {
+        alert('Notification permission was not granted. Check your browser/site settings and try again.');
+      }
+    });
+  });
+}
+
+function showSystemNotification(title, options) {
+  if (swRegistration) {
+    swRegistration.showNotification(title, options).catch(() => {});
+  } else if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification(title, options); } catch (e) {}
+  }
+}
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 880;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.25, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    o.start(); o.stop(ctx.currentTime + 0.5);
+  } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+}
+
+function notifyNew(title, body, tag) {
+  if (notifyEnabled) showSystemNotification(title, { body, tag });
+  beep();
+}
+
+// ---- Games tab ----
+let seenGameKeys = null;
+function startGamesListener() {
+  approvalsRef.orderByChild('status').equalTo('pending').on('value', snap => {
+    const items = [];
+    snap.forEach(child => items.push({ key: child.key, ...child.val() }));
+    items.sort((a, b) => a.createdAt - b.createdAt);
+
+    const currentKeys = new Set(items.map(i => i.key));
+    if (seenGameKeys === null) { seenGameKeys = currentKeys; }
+    else {
+      items.forEach(r => { if (!seenGameKeys.has(r.key)) notifyNew('New game request', `${r.game} — ${r.name} (${fmtUGX(r.amount)})`, r.key); });
+      seenGameKeys = currentKeys;
+    }
+
+    updateCount('countGames', items.length);
+    const list = document.getElementById('gamesList');
+    const empty = document.getElementById('gamesEmpty');
+    if (!items.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    list.innerHTML = items.map(r => `
+      <div class="card req-card">
+        <span class="badge ${r.type}">${r.type === 'tournament' ? 'Tournament' : 'Game'}</span>
+        <h3 style="font-size:17px; margin-top:8px;">${esc(r.game)} ${r.tier && r.tier !== '-' ? '· ' + esc(r.tier) : ''}</h3>
+        <div class="meta">
+          <span>Name: <b>${esc(r.name)}</b></span>
+          <span>Number: <b>${esc(r.number)}</b></span>
+          <span>Amount: <b>${fmtUGX(r.amount)}</b></span>
+          <span>Txn ID: <b>${esc(r.txid)}</b></span>
+        </div>
+        <div class="req-actions">
+          <button class="btn btn-primary" onclick="decideApproval('${r.key}','approved')">Approve</button>
+          <button class="btn btn-deny" onclick="decideApproval('${r.key}','denied')">Deny</button>
+        </div>
+      </div>
+    `).join('');
+  });
+}
+function decideApproval(key, status) {
+  approvalsRef.child(key).update({ status, decidedAt: Date.now() });
+}
+
+// ---- Jobs tab ----
+let seenJobKeys = null;
+function startJobsListener() {
+  jobsRef.orderByChild('status').equalTo('pending_approval').on('value', snap => {
+    const items = [];
+    snap.forEach(child => items.push({ key: child.key, ...child.val() }));
+    items.sort((a, b) => a.createdAt - b.createdAt);
+
+    const currentKeys = new Set(items.map(i => i.key));
+    if (seenJobKeys === null) { seenJobKeys = currentKeys; }
+    else {
+      items.forEach(r => { if (!seenJobKeys.has(r.key)) notifyNew('New job posting', `${r.title} — ${r.bossName}`, r.key); });
+      seenJobKeys = currentKeys;
+    }
+
+    updateCount('countJobs', items.length);
+    const list = document.getElementById('jobsList');
+    const empty = document.getElementById('jobsEmpty');
+    if (!items.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    list.innerHTML = items.map(r => `
+      <div class="card req-card">
+        <span class="badge job">Job</span>
+        <h3 style="font-size:17px; margin-top:8px;">${esc(r.title)}</h3>
+        <p style="font-size:14px; color:var(--ink-soft);">${esc(r.description)}</p>
+        <div class="meta">
+          <span>Boss: <b>${esc(r.bossName)}</b></span>
+          <span>Number: <b>${esc(r.bossNumber)}</b></span>
+          <span>Budget: <b>${fmtUGX(r.budget)}</b> (+10,000 host fee)</span>
+          <span>Deadline: <b>${esc(r.deadline)}</b></span>
+          <span>Txn ID: <b>${esc(r.txid)}</b></span>
+        </div>
+        <div class="req-actions">
+          <button class="btn btn-primary" onclick="decideJob('${r.key}','approved')">Approve</button>
+          <button class="btn btn-deny" onclick="decideJob('${r.key}','rejected')">Deny</button>
+        </div>
+      </div>
+    `).join('');
+  });
+}
+function decideJob(key, status) {
+  jobsRef.child(key).update({ status, decidedAt: Date.now() });
+}
+
+// ---- Payouts tab ----
+let seenPayoutKeys = null;
+function startPayoutsListener() {
+  payoutsRef.orderByChild('status').equalTo('pending').on('value', snap => {
+    const items = [];
+    snap.forEach(child => items.push({ key: child.key, ...child.val() }));
+    items.sort((a, b) => a.createdAt - b.createdAt);
+
+    const currentKeys = new Set(items.map(i => i.key));
+    if (seenPayoutKeys === null) { seenPayoutKeys = currentKeys; }
+    else {
+      items.forEach(r => { if (!seenPayoutKeys.has(r.key)) notifyNew('New payout to process', `${r.workerName || r.name} — ${fmtUGX(r.amount)}`, r.key); });
+      seenPayoutKeys = currentKeys;
+    }
+
+    updateCount('countPayouts', items.length);
+    const list = document.getElementById('payoutsList');
+    const empty = document.getElementById('payoutsEmpty');
+    if (!items.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    list.innerHTML = items.map(r => `
+      <div class="card req-card">
+        <span class="badge ${r.type}">${r.type === 'job' ? 'Job payout' : r.type}</span>
+        <h3 style="font-size:17px; margin-top:8px;">${esc(r.jobTitle || r.game || 'Payout')}</h3>
+        <div class="meta">
+          <span>Pay to: <b>${esc(r.workerName || r.name)}</b></span>
+          <span>Number: <b>${esc(r.workerNumber || r.number)}</b></span>
+          <span>Amount: <b>${fmtUGX(r.amount)}</b></span>
+        </div>
+        <div class="req-actions">
+          <button class="btn btn-primary" onclick="markPaid('${r.key}')">Mark paid</button>
+        </div>
+      </div>
+    `).join('');
+  });
+}
+function markPaid(key) {
+  payoutsRef.child(key).update({ status: 'paid', paidAt: Date.now() });
+}
+
+function updateCount(elId, n) {
+  const el = document.getElementById(elId);
+  if (n > 0) { el.textContent = n; el.style.display = 'inline-block'; }
+  else { el.style.display = 'none'; }
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : s;
+  return d.innerHTML;
+}
+</script>
+
+</body>
+</html>
