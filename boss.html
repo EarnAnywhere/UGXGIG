@@ -17,6 +17,7 @@
       <a href="worker.html">Find work</a>
       <a href="games.html">Games</a>
       <a href="referral.html">Refer</a>
+      <a href="my-jobs.html">My jobs</a>
     </nav>
   </div>
 </div>
@@ -139,6 +140,14 @@ document.getElementById('bossForm').addEventListener('submit', function (e) {
     applicants: {}
   };
 
+  function saveMyJob(id, title) {
+    try {
+      const list = JSON.parse(localStorage.getItem('ugxgig_my_jobs') || '[]');
+      list.unshift({ id, title, savedAt: Date.now() });
+      localStorage.setItem('ugxgig_my_jobs', JSON.stringify(list));
+    } catch (e) {}
+  }
+
   jobsRef.push(job).then(ref => {
     document.getElementById('bossForm').style.display = 'none';
     document.getElementById('waitingBox').style.display = 'block';
@@ -153,6 +162,7 @@ document.getElementById('bossForm').addEventListener('submit', function (e) {
         const url = `boss-job.html?id=${ref.key}`;
         link.href = url;
         link.textContent = 'Open my job page';
+        saveMyJob(ref.key, job.title);
       } else if (status === 'rejected') {
         ref.child('status').off();
         document.getElementById('waitingBox').style.display = 'none';
