@@ -2,78 +2,119 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>UGXGIG — Post gigs, do gigs, get paid</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UGXGIG — Work. Play. Earn.</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="v2">
 
-<div class="topbar">
-  <div class="wrap">
-    <a href="index.html" class="brand">UGX<span>GIG</span></a>
-    <nav>
-      <a href="index.html" class="current">Home</a>
-      <a href="boss.html">Post a job</a>
-      <a href="worker.html">Find work</a>
-      <a href="games.html">Games</a>
-      <a href="referral.html">Refer</a>
-      <a href="my-jobs.html">My jobs</a>
-    </nav>
-  </div>
+<div class="v2-top">
+  <a href="index.html" class="brand">UGX<span>GIG</span></a>
+  <div class="bell">🔔</div>
 </div>
 
-<header class="page-head">
-  <div class="wrap">
-    <p class="kicker">Uganda's gig &amp; earn site</p>
-    <h1>Post a job, do a job,<br>or win one &mdash; every shilling moves on WhatsApp.</h1>
-    <p class="sub">No app to download. Fill a short form, pay with mobile money, and WhatsApp handles the rest.</p>
+<div id="resumeBanner" style="display:none; padding:0 20px;">
+  <a id="resumeLink" href="#" class="v2-card" style="display:flex; align-items:center; justify-content:space-between; text-decoration:none; color:var(--v2-text);">
+    <span>Continue: <strong id="resumeLabel"></strong></span>
+    <span style="color:var(--v2-text-soft);">&rarr;</span>
+  </a>
+</div>
+
+<main id="v2main">
+
+  <div class="v2-hero">
+    <h2>Turn your time into money</h2>
+    <p>Complete gigs, play games, refer friends and earn real UGX.</p>
+    <a href="worker.html" class="btn-earn">⚡ Start earning</a>
   </div>
-</header>
 
-<main>
-  <section>
-    <div class="wrap">
-      <div class="grid grid-2">
-        <a class="nav-card" href="boss.html">
-          <span class="tag">Hiring</span>
-          <h3>Post a job</h3>
-          <p>Describe the task, set a budget and a deadline, and reach workers directly on WhatsApp.</p>
-        </a>
-        <a class="nav-card" href="worker.html">
-          <span class="tag">Earning</span>
-          <h3>Find work</h3>
-          <p>Browse open gigs and apply straight into the boss's WhatsApp chat.</p>
-        </a>
-        <a class="nav-card" href="games.html">
-          <span class="tag">Play</span>
-          <h3>Entry-fee games</h3>
-          <p>Pick a tier, pay in, and play for a real payout &mdash; plus a daily ticket tournament.</p>
-        </a>
-        <a class="nav-card" href="referral.html">
-          <span class="tag">Refer</span>
-          <h3>Refer &amp; earn</h3>
-          <p>Bring someone in. Once they complete 10 tasks, you get 1,000 UGX.</p>
-        </a>
-      </div>
+  <div class="v2-section">
+    <div class="v2-section-head">
+      <h3>Available gigs</h3>
+      <a href="worker.html">See all</a>
     </div>
-  </section>
+    <div id="gigFeed"><p class="v2-empty">Loading gigs&hellip;</p></div>
+  </div>
 
-  <section>
-    <div class="wrap">
-      <h2 style="font-size:22px; margin-bottom:16px;">How UGXGIG works</h2>
-      <ol class="steps">
-        <li>Fill in the short form for whatever you want to do &mdash; post, apply, play, or refer.</li>
-        <li>Where a payment's needed, send it to our mobile money line and paste the transaction ID.</li>
-        <li>Tap continue &mdash; it opens WhatsApp with your details ready to send.</li>
-        <li>We confirm on WhatsApp and the job, game, or payout moves forward from there.</li>
-      </ol>
+  <div class="v2-section">
+    <div class="v2-section-head">
+      <h3>Play &amp; earn</h3>
+      <a href="games.html">See all</a>
     </div>
-  </section>
+    <div class="v2-grid-3">
+      <a class="v2-tile" href="games.html"><span class="ic">🎮</span><span class="label">Games</span></a>
+      <a class="v2-tile" href="games.html#tournament"><span class="ic">🏆</span><span class="label">Tournament</span></a>
+      <a class="v2-tile" href="referral.html"><span class="ic">🤝</span><span class="label">Refer</span></a>
+    </div>
+  </div>
+
+  <div class="v2-section">
+    <div class="v2-section-head"><h3>How it works</h3></div>
+    <div class="v2-card">
+      <p style="font-size:14px; color:var(--v2-text-soft); margin:0 0 10px;">1. Fill a short form for whatever you want to do.</p>
+      <p style="font-size:14px; color:var(--v2-text-soft); margin:0 0 10px;">2. Pay with mobile money where needed, paste the transaction ID.</p>
+      <p style="font-size:14px; color:var(--v2-text-soft); margin:0 0 10px;">3. We verify and approve you — usually within minutes.</p>
+      <p style="font-size:14px; color:var(--v2-text-soft); margin:0;">4. You're straight into the job, game, or group from there.</p>
+    </div>
+  </div>
+
 </main>
 
-<footer>
-  <div class="wrap">UGXGIG &mdash; every gig ends in a WhatsApp chat.</div>
-</footer>
+<nav class="v2-tabbar">
+  <a href="index.html" class="active"><span class="ic">🏠</span>Home</a>
+  <a href="worker.html"><span class="ic">📋</span>Tasks</a>
+  <a href="games.html"><span class="ic">🎮</span>Games</a>
+  <a href="referral.html"><span class="ic">🤝</span>Refer</a>
+  <a href="profile.html"><span class="ic">👤</span>Profile</a>
+</nav>
+
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const jobsRef = firebase.database().ref("jobs");
+
+jobsRef.orderByChild('status').equalTo('approved').limitToLast(4).on('value', snap => {
+  const jobs = [];
+  snap.forEach(child => jobs.push({ id: child.key, ...child.val() }));
+  jobs.sort((a, b) => b.createdAt - a.createdAt);
+  const feed = document.getElementById('gigFeed');
+  if (!jobs.length) { feed.innerHTML = '<p class="v2-empty">No open gigs right now — check back soon.</p>'; return; }
+  feed.innerHTML = jobs.map(j => `
+    <a class="v2-gig" href="worker.html">
+      <div class="ic">💼</div>
+      <div class="body">
+        <div class="title">${esc(j.title)}</div>
+        <div class="meta"><span>Deadline ${esc(j.deadline)}</span></div>
+      </div>
+      <div class="pay">${fmtUGX(j.budget)}</div>
+    </a>
+  `).join('');
+});
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+</script>
+
+<script src="activity.js"></script>
+<script>
+var last = getLastActivity();
+if (last) {
+  document.getElementById('resumeLabel').textContent = last.label;
+  document.getElementById('resumeLink').href = last.url;
+  document.getElementById('resumeBanner').style.display = 'block';
+  document.getElementById('resumeBanner').style.marginBottom = '12px';
+}
+</script>
 
 </body>
 </html>
