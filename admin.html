@@ -62,6 +62,7 @@
     <button class="tab-btn active" data-tab="games">Games <span class="tab-count" id="countGames" style="display:none;"></span></button>
     <button class="tab-btn" data-tab="jobs">Jobs <span class="tab-count" id="countJobs" style="display:none;"></span></button>
     <button class="tab-btn" data-tab="payouts">Payouts <span class="tab-count" id="countPayouts" style="display:none;"></span></button>
+    <button class="tab-btn" data-tab="tasks">Tasks</button>
   </div>
 
   <div id="panel-games" class="tab-panel active">
@@ -77,6 +78,21 @@
   <div id="panel-payouts" class="tab-panel">
     <div id="payoutsList"></div>
     <div id="payoutsEmpty" class="empty">No pending payouts.</div>
+  </div>
+
+  <div id="panel-tasks" class="tab-panel">
+    <div class="card" style="padding:18px; margin-bottom:18px;">
+      <h3 style="font-size:16px; margin-bottom:12px;">Add a new task</h3>
+      <form id="taskAddForm">
+        <div class="field"><label>Title</label><input type="text" id="taTitle" required placeholder="e.g. Sign up on FireFaucet"></div>
+        <div class="field"><label>Instructions</label><input type="text" id="taInstructions" required placeholder="What the user should do"></div>
+        <div class="field"><label>Your referral link</label><input type="text" id="taLink" required placeholder="https://..."></div>
+        <div class="field"><label>Reward (UGX)</label><input type="number" id="taReward" required placeholder="2000"></div>
+        <button type="submit" class="btn btn-primary">Add task</button>
+      </form>
+    </div>
+    <div id="tasksList"></div>
+    <div id="tasksEmpty" class="empty">No tasks yet — add one above.</div>
   </div>
 </main>
 
@@ -102,6 +118,7 @@ const db = firebase.database();
 const approvalsRef = db.ref("approvals");
 const jobsRef = db.ref("jobs");
 const payoutsRef = db.ref("payouts");
+const tasksRef = db.ref("tasks");
 
 document.getElementById('pinSubmit').addEventListener('click', checkPin);
 document.getElementById('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
@@ -115,6 +132,7 @@ function checkPin() {
     startGamesListener();
     startJobsListener();
     startPayoutsListener();
+    startTasksListener();
   } else {
     document.getElementById('pinError').style.display = 'block';
   }
@@ -298,7 +316,7 @@ function startPayoutsListener() {
 
     list.innerHTML = items.map(r => `
       <div class="card req-card">
-        <span class="badge ${r.type}">${r.type === 'job' ? 'Job payout' : r.type}</span>
+        <span class="badge ${r.type}">${r.type === 'job' ? 'Job payout' : r.type === 'task' ? 'Task payout' : r.type}</span>
         <h3 style="font-size:17px; margin-top:8px;">${esc(r.jobTitle || r.game || 'Payout')}</h3>
         <div class="meta">
           <span>Pay to: <b>${esc(r.workerName || r.name)}</b></span>
@@ -315,6 +333,50 @@ function startPayoutsListener() {
 function markPaid(key) {
   payoutsRef.child(key).update({ status: 'paid', paidAt: Date.now() });
 }
+
+// ---- Tasks tab ----
+document.getElementById('taskAddForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  tasksRef.push({
+    title: document.getElementById('taTitle').value.trim(),
+    instructions: document.getElementById('taInstructions').value.trim(),
+    link: document.getElementById('taLink').value.trim(),
+    reward: Number(document.getElementById('taReward').value),
+    active: true,
+    createdAt: Date.now()
+  }).then(() => { document.getElementById('taskAddForm').reset(); });
+});
+
+function startTasksListener() {
+  tasksRef.on('value', snap => {
+    const items = [];
+    snap.forEach(child => items.push({ key: child.key, ...child.val() }));
+    items.sort((a, b) => b.createdAt - a.createdAt);
+
+    const list = document.getElementById('tasksList');
+    const empty = document.getElementById('tasksEmpty');
+    if (!items.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    list.innerHTML = items.map(t => `
+      <div class="card req-card">
+        <span class="badge ${t.active ? 'tournament' : 'job'}">${t.active ? 'Active' : 'Paused'}</span>
+        <h3 style="font-size:17px; margin-top:8px;">${esc(t.title)}</h3>
+        <p style="font-size:14px; color:var(--ink-soft);">${esc(t.instructions)}</p>
+        <div class="meta">
+          <span>Reward: <b>${fmtUGX(t.reward)}</b></span>
+          <span>Link: <b>${esc(t.link)}</b></span>
+        </div>
+        <div class="req-actions">
+          <button class="btn btn-primary" onclick="toggleTask('${t.key}', ${!t.active})">${t.active ? 'Pause' : 'Reactivate'}</button>
+          <button class="btn btn-deny" onclick="deleteTask('${t.key}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  });
+}
+function toggleTask(key, newActive) { tasksRef.child(key).update({ active: newActive }); }
+function deleteTask(key) { if (confirm('Delete this task?')) tasksRef.child(key).remove(); }
 
 function updateCount(elId, n) {
   const el = document.getElementById(elId);
