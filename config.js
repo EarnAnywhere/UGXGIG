@@ -29,6 +29,21 @@ const GROUP_LINKS = {
   "referral": "https://chat.whatsapp.com/KTUjLovVM8IA0as4Y9yzNt",
 };
 
+// Direct links to games that are actually built — approved players go straight
+// here (into that game's own lobby) instead of a WhatsApp group. Add a line
+// here the moment a new game is built; anything not listed still falls back
+// to its WhatsApp group above.
+const GAME_URLS = {
+  "canon-fleet": "games/canon-fleet.html",
+  "whack-a-mole": "games/whack-a-mole.html",
+  "jigsaw-puzzle-tournaments": "games/jigsaw-puzzle-tournaments.html",
+  "memory-match": "games/pair-duel.html",
+  "racers-2": "games/apex-ten.html",
+  "colour-sort": "games/colour-sort.html",
+  "spelling-battles": "games/spelling-battle.html",
+  "last-man": "games/last-ten-standing.html",
+};
+
 const TIERS = {
   tier3: {
     label: "Tier 3",
