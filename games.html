@@ -6,33 +6,17 @@
 <title>Games — UGXGIG</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="v2">
 
-<div class="topbar">
-  <div class="wrap">
-    <a href="index.html" class="brand">UGX<span>GIG</span></a>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="boss.html">Post a job</a>
-      <a href="worker.html">Find work</a>
-      <a href="games.html" class="current">Games</a>
-      <a href="referral.html">Refer</a>
-      <a href="my-jobs.html">My jobs</a>
-    </nav>
-  </div>
+<div class="v2-top">
+  <a href="index.html" class="brand">UGX<span>GIG</span></a>
+  <div class="bell">🔔</div>
 </div>
 
-<header class="page-head">
-  <div class="wrap">
-    <p class="kicker">Entry-fee games</p>
-    <h1>Pick a tier, pick a game</h1>
-    <p class="sub">Pay the entry fee, paste your transaction ID, and we'll add you to that game's WhatsApp group.</p>
-  </div>
-</header>
-
-<main>
-  <section>
-    <div class="wrap">
+<main id="v2main">
+  <div class="v2-section" style="padding-top:8px;">
+    <h2 style="font-size:19px; margin-bottom:4px;">Pick a tier, pick a game</h2>
+    <p style="color:var(--v2-text-soft); font-size:13.5px; margin:0 0 16px;">Pay the entry fee, paste your transaction ID, and get approved straight into the game.</p>
 
       <div class="tier-tabs" id="tierTabs"></div>
 
@@ -83,13 +67,11 @@
         <p class="hint" style="margin-top:10px;" id="entryJoinHint"></p>
       </div>
 
-    </div>
-  </section>
+  </div>
 
-  <section id="tournament">
-    <div class="wrap">
-      <h2 style="font-size:24px; margin-bottom:6px;">Daily ticket tournament</h2>
-      <p class="sub" style="margin-bottom:18px;">Runs every day, 7am&ndash;7pm. Buy a seat, collect tickets by playing, and climb the leaderboard.</p>
+  <div class="v2-section" id="tournament">
+      <h2 style="font-size:20px; margin-bottom:6px;">Daily ticket tournament</h2>
+      <p style="color:var(--v2-text-soft); font-size:13.5px; margin-bottom:18px;">Runs every day, 7am&ndash;7pm. Buy a seat, collect tickets by playing, and climb the leaderboard.</p>
 
       <div class="stat-row">
         <div class="stat"><b>10,000</b>Seat (UGX)</div>
@@ -156,13 +138,16 @@
         <button type="button" class="btn btn-primary" id="tourneyJoinBtn">Join tournament group</button>
         <p class="hint" style="margin-top:10px;">Copies your details and opens the tournament group. Paste and send once you're in.</p>
       </div>
-    </div>
-  </section>
+  </div>
 </main>
 
-<footer>
-  <div class="wrap">UGXGIG &mdash; every gig ends in a WhatsApp chat.</div>
-</footer>
+<nav class="v2-tabbar">
+  <a href="index.html"><span class="ic">🏠</span>Home</a>
+  <a href="worker.html"><span class="ic">📋</span>Tasks</a>
+  <a href="games.html" class="active"><span class="ic">🎮</span>Games</a>
+  <a href="referral.html"><span class="ic">🤝</span>Refer</a>
+  <a href="profile.html"><span class="ic">👤</span>Profile</a>
+</nav>
 
 <script src="config.js"></script>
 <script src="activity.js"></script>
