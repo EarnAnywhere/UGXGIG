@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Profile — UGXGIG</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="v2">
+
+<div class="v2-top">
+  <a href="index.html" class="brand">UGX<span>GIG</span></a>
+  <div class="bell">🔔</div>
+</div>
+
+<main id="v2main">
+  <div class="v2-section" style="padding-top:8px;">
+    <div class="v2-card" style="text-align:center;">
+      <div style="width:56px; height:56px; border-radius:50%; background:var(--v2-surface-raised); display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 10px;">👤</div>
+      <h2 style="font-size:17px;">This device</h2>
+      <p style="color:var(--v2-text-soft); font-size:13px; margin:4px 0 0;">UGXGIG doesn't use accounts yet — everything below is saved right here on your phone.</p>
+    </div>
+  </div>
+
+  <div class="v2-section">
+    <div class="v2-section-head"><h3>Jobs I posted</h3></div>
+    <div id="jobsPosted"></div>
+    <p id="jobsEmpty" class="v2-empty" style="display:none;">Nothing posted from this device yet.</p>
+  </div>
+
+  <div class="v2-section">
+    <div class="v2-section-head"><h3>Jobs I applied to</h3></div>
+    <div id="jobsApplied"></div>
+    <p id="appsEmpty" class="v2-empty" style="display:none;">No applications from this device yet.</p>
+  </div>
+
+  <div class="v2-section">
+    <div class="v2-section-head"><h3>More</h3></div>
+    <a href="boss.html" class="v2-gig"><div class="ic">💼</div><div class="body"><div class="title">Post a job</div></div></a>
+    <a href="referral.html" class="v2-gig"><div class="ic">🤝</div><div class="body"><div class="title">Refer &amp; earn</div></div></a>
+  </div>
+</main>
+
+<nav class="v2-tabbar">
+  <a href="index.html"><span class="ic">🏠</span>Home</a>
+  <a href="worker.html"><span class="ic">📋</span>Tasks</a>
+  <a href="games.html"><span class="ic">🎮</span>Games</a>
+  <a href="referral.html"><span class="ic">🤝</span>Refer</a>
+  <a href="profile.html" class="active"><span class="ic">👤</span>Profile</a>
+</nav>
+
+<script src="config.js"></script>
+<script>
+let posted = [], applied = [];
+try { posted = JSON.parse(localStorage.getItem('ugxgig_my_jobs') || '[]'); } catch (e) {}
+try { applied = JSON.parse(localStorage.getItem('ugxgig_my_applications') || '[]'); } catch (e) {}
+
+const jobsEl = document.getElementById('jobsPosted');
+if (!posted.length) { document.getElementById('jobsEmpty').style.display = 'block'; }
+else {
+  jobsEl.innerHTML = posted.map(j => `
+    <a class="v2-gig" href="boss-job.html?id=${j.id}">
+      <div class="ic">💼</div>
+      <div class="body"><div class="title">${esc(j.title)}</div><div class="meta">${new Date(j.savedAt).toLocaleDateString()}</div></div>
+    </a>
+  `).join('');
+}
+
+const appsEl = document.getElementById('jobsApplied');
+if (!applied.length) { document.getElementById('appsEmpty').style.display = 'block'; }
+else {
+  appsEl.innerHTML = applied.map(a => `
+    <a class="v2-gig" href="worker-job.html?jobId=${a.jobId}&appId=${a.appId}">
+      <div class="ic">📋</div>
+      <div class="body"><div class="title">${esc(a.title)}</div><div class="meta">${new Date(a.savedAt).toLocaleDateString()}</div></div>
+    </a>
+  `).join('');
+}
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+</script>
+
+</body>
+</html>
