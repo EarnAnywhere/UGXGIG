@@ -6,115 +6,98 @@
 <title>Find work — UGXGIG</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="v2">
 
-<div class="topbar">
-  <div class="wrap">
-    <a href="index.html" class="brand">UGX<span>GIG</span></a>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="boss.html">Post a job</a>
-      <a href="worker.html" class="current">Find work</a>
-      <a href="games.html">Games</a>
-      <a href="referral.html">Refer</a>
-      <a href="my-jobs.html">My applications</a>
-    </nav>
-  </div>
+<div class="v2-top">
+  <a href="index.html" class="brand">UGX<span>GIG</span></a>
+  <div class="bell">🔔</div>
 </div>
 
-<header class="page-head">
-  <div class="wrap">
-    <p class="kicker">For workers</p>
-    <h1>Find work</h1>
-    <p class="sub">Open gigs below. Apply, and the boss will review you directly.</p>
+<main id="v2main">
+  <div class="v2-section" style="padding-top:8px;">
+    <h2 style="font-size:19px; margin-bottom:4px;">Tasks</h2>
+    <p style="color:var(--v2-text-soft); font-size:13.5px; margin:0 0 14px;">Free to do — no payment needed from you. Do it, submit proof, get paid.</p>
+    <div id="taskList"></div>
   </div>
-</header>
-
-<main>
-  <section>
-    <div class="wrap">
-      <h2 style="font-size:19px; margin-bottom:4px;">Tasks</h2>
-      <p class="hint" style="margin-bottom:14px;">Free to do — no payment needed from you. Do it, submit proof, get paid.</p>
-      <div id="taskList"></div>
-    </div>
-  </section>
-  <section>
-    <div class="wrap">
-      <h2 style="font-size:19px; margin-bottom:14px;">Gigs</h2>
-      <div id="jobList">Loading jobs&hellip;</div>
-    </div>
-  </section>
+  <div class="v2-section">
+    <h2 style="font-size:19px; margin-bottom:14px;">Gigs</h2>
+    <div id="jobList">Loading jobs&hellip;</div>
+  </div>
 </main>
 
 <!-- Apply modal -->
-<div id="applyOverlay" style="display:none; position:fixed; inset:0; background:rgba(26,29,21,0.6); z-index:50; align-items:center; justify-content:center; padding:20px;">
-  <div class="card" style="max-width:420px; width:100%; max-height:88vh; overflow-y:auto;">
-    <h3 style="font-size:19px; margin-bottom:4px;">Apply for <span id="applyJobTitle"></span></h3>
-    <p style="font-size:13px; color:var(--ink-soft); margin-bottom:18px;">The boss will see this and decide whether to hire you.</p>
+<div id="applyOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:50; align-items:center; justify-content:center; padding:20px;">
+  <div class="v2-card" style="max-width:420px; width:100%; max-height:88vh; overflow-y:auto;">
+    <h3 style="font-size:17px; margin-bottom:4px;">Apply for <span id="applyJobTitle"></span></h3>
+    <p style="font-size:13px; color:var(--v2-text-soft); margin-bottom:16px;">The boss will see this and decide whether to hire you.</p>
 
     <form id="applyForm">
-      <div class="field">
+      <div class="v2-field">
         <label for="workerName">Your name</label>
         <input type="text" id="workerName" required>
       </div>
-      <div class="field">
+      <div class="v2-field">
         <label for="workerNumber">Your number</label>
         <input type="tel" id="workerNumber" required placeholder="07XXXXXXXX">
       </div>
-      <div class="field">
+      <div class="v2-field">
         <label for="workerSkill">Relevant skill / experience</label>
         <textarea id="workerSkill" required placeholder="Why you're a good fit for this job"></textarea>
       </div>
-      <div class="grid grid-2">
-        <button type="button" class="btn btn-ghost" id="applyCancel">Cancel</button>
-        <button type="submit" class="btn btn-primary">Apply</button>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="v2-btn v2-btn-ghost" id="applyCancel">Cancel</button>
+        <button type="submit" class="v2-btn v2-btn-green">Apply</button>
       </div>
     </form>
 
     <div id="applySuccess" style="display:none; text-align:center;">
-      <p style="font-weight:600; color:var(--green); margin-bottom:10px;">&#10003; Application sent!</p>
-      <p class="hint" style="margin-bottom:14px;">Save this link — it's how you'll check your status and submit proof once hired. We can't send it to you again.</p>
-      <a href="#" id="workerLink" class="btn btn-primary" target="_blank"></a>
+      <p style="font-weight:700; color:var(--v2-green); margin-bottom:10px;">&#10003; Application sent!</p>
+      <p style="font-size:13px; color:var(--v2-text-soft); margin-bottom:14px;">Save this link — it's how you'll check your status and submit proof once hired. We can't send it to you again.</p>
+      <a href="#" id="workerLink" class="v2-btn v2-btn-green" target="_blank"></a>
     </div>
   </div>
 </div>
 
 <!-- Task submit modal -->
-<div id="taskOverlay" style="display:none; position:fixed; inset:0; background:rgba(26,29,21,0.6); z-index:50; align-items:center; justify-content:center; padding:20px;">
-  <div class="card" style="max-width:420px; width:100%; max-height:88vh; overflow-y:auto;">
-    <h3 style="font-size:19px; margin-bottom:4px;" id="taskTitleEl"></h3>
-    <p id="taskInstructionsEl" style="font-size:13px; color:var(--ink-soft); margin-bottom:14px;"></p>
-    <a href="#" id="taskLinkEl" target="_blank" class="btn btn-primary" style="margin-bottom:18px;">Open link</a>
+<div id="taskOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:50; align-items:center; justify-content:center; padding:20px;">
+  <div class="v2-card" style="max-width:420px; width:100%; max-height:88vh; overflow-y:auto;">
+    <h3 style="font-size:17px; margin-bottom:4px;" id="taskTitleEl"></h3>
+    <p id="taskInstructionsEl" style="font-size:13px; color:var(--v2-text-soft); margin-bottom:14px;"></p>
+    <a href="#" id="taskLinkEl" target="_blank" class="v2-btn v2-btn-green" style="margin-bottom:18px;">Open link</a>
 
     <form id="taskForm">
-      <div class="field">
+      <div class="v2-field">
         <label for="taskName">Your name</label>
         <input type="text" id="taskName" required>
       </div>
-      <div class="field">
+      <div class="v2-field">
         <label for="taskNumber">Your number</label>
         <input type="tel" id="taskNumber" required placeholder="07XXXXXXXX">
       </div>
-      <div class="field">
+      <div class="v2-field">
         <label for="taskProof">Your username/email on that site (so we can verify)</label>
         <input type="text" id="taskProof" required>
       </div>
-      <div class="grid grid-2">
-        <button type="button" class="btn btn-ghost" id="taskCancel">Cancel</button>
-        <button type="submit" class="btn btn-primary">I've done it</button>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="v2-btn v2-btn-ghost" id="taskCancel">Cancel</button>
+        <button type="submit" class="v2-btn v2-btn-green">I've done it</button>
       </div>
     </form>
 
     <div id="taskSuccess" style="display:none; text-align:center;">
-      <p style="font-weight:600; color:var(--green); margin-bottom:10px;">&#10003; Submitted!</p>
-      <p class="hint">We'll verify on our end and send your payment shortly.</p>
+      <p style="font-weight:700; color:var(--v2-green); margin-bottom:10px;">&#10003; Submitted!</p>
+      <p style="font-size:13px; color:var(--v2-text-soft);">We'll verify on our end and send your payment shortly.</p>
     </div>
   </div>
 </div>
 
-<footer>
-  <div class="wrap">UGXGIG &mdash; post it, get it done, pay it out.</div>
-</footer>
+<nav class="v2-tabbar">
+  <a href="index.html"><span class="ic">🏠</span>Home</a>
+  <a href="worker.html" class="active"><span class="ic">📋</span>Tasks</a>
+  <a href="games.html"><span class="ic">🎮</span>Games</a>
+  <a href="referral.html"><span class="ic">🤝</span>Refer</a>
+  <a href="profile.html"><span class="ic">👤</span>Profile</a>
+</nav>
 
 <script src="config.js"></script>
 <script src="activity.js"></script>
@@ -151,13 +134,13 @@ tasksRef.orderByChild('active').equalTo(true).on('value', snap => {
 
 function renderTasks(tasks) {
   const list = document.getElementById('taskList');
-  if (!tasks.length) { list.innerHTML = '<p class="hint">No tasks available right now.</p>'; return; }
+  if (!tasks.length) { list.innerHTML = '<p class="v2-empty">No tasks available right now.</p>'; return; }
   list.innerHTML = tasks.map(t => `
-    <div class="card job-card">
-      <h3>${esc(t.title)}</h3>
-      <p>${esc(t.instructions)}</p>
-      <div class="meta"><span><b>${fmtUGX(t.reward)}</b> when verified</span></div>
-      <button class="btn btn-primary" onclick="openTask('${t.id}')">Do this task</button>
+    <div class="v2-card" style="margin-bottom:10px;">
+      <h3 style="font-size:15px; margin-bottom:4px;">${esc(t.title)}</h3>
+      <p style="font-size:13px; color:var(--v2-text-soft); margin:0 0 10px;">${esc(t.instructions)}</p>
+      <div style="font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--v2-green); font-size:14px; margin-bottom:10px;">${fmtUGX(t.reward)} when verified</div>
+      <button class="v2-btn v2-btn-green" onclick="openTask('${t.id}')">Do this task</button>
     </div>
   `).join('');
 }
@@ -207,20 +190,22 @@ jobsRef.orderByChild('status').equalTo('approved').on('value', snap => {
 function renderJobs(jobs) {
   const list = document.getElementById('jobList');
   if (!jobs.length) {
-    list.innerHTML = '<p>No open jobs right now &mdash; check back soon.</p>';
+    list.innerHTML = '<p class="v2-empty">No open jobs right now — check back soon.</p>';
     return;
   }
   list.innerHTML = jobs.map(job => `
-    <div class="card job-card">
-      <h3>${esc(job.title)}</h3>
-      <p>${esc(job.description)}</p>
-      <div class="meta">
-        <span><b>${fmtUGX(job.budget)}</b></span>
-        <span>Proof: <b>${esc(job.proof)}</b></span>
-        <span>Deadline: <b>${esc(job.deadline)}</b></span>
-        <span>Posted by: <b>${esc(job.bossName)}</b></span>
+    <div class="v2-card" style="margin-bottom:10px;">
+      <h3 style="font-size:15px; margin-bottom:4px;">${esc(job.title)}</h3>
+      <p style="font-size:13px; color:var(--v2-text-soft); margin:0 0 10px;">${esc(job.description)}</p>
+      <div style="font-size:12.5px; color:var(--v2-text-soft); margin-bottom:10px;">
+        Proof: <b style="color:var(--v2-text);">${esc(job.proof)}</b> &middot;
+        Deadline: <b style="color:var(--v2-text);">${esc(job.deadline)}</b> &middot;
+        By: <b style="color:var(--v2-text);">${esc(job.bossName)}</b>
       </div>
-      <button class="btn btn-primary" onclick="openApply('${job.id}')">Apply</button>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--v2-green); font-size:15px;">${fmtUGX(job.budget)}</span>
+        <button class="v2-btn v2-btn-green" style="width:auto; padding:10px 18px;" onclick="openApply('${job.id}')">Apply</button>
+      </div>
     </div>
   `).join('');
   window.__jobsById = Object.fromEntries(jobs.map(j => [j.id, j]));
