@@ -33,6 +33,14 @@
 <main>
   <section>
     <div class="wrap">
+      <h2 style="font-size:19px; margin-bottom:4px;">Tasks</h2>
+      <p class="hint" style="margin-bottom:14px;">Free to do — no payment needed from you. Do it, submit proof, get paid.</p>
+      <div id="taskList"></div>
+    </div>
+  </section>
+  <section>
+    <div class="wrap">
+      <h2 style="font-size:19px; margin-bottom:14px;">Gigs</h2>
       <div id="jobList">Loading jobs&hellip;</div>
     </div>
   </section>
@@ -71,11 +79,46 @@
   </div>
 </div>
 
+<!-- Task submit modal -->
+<div id="taskOverlay" style="display:none; position:fixed; inset:0; background:rgba(26,29,21,0.6); z-index:50; align-items:center; justify-content:center; padding:20px;">
+  <div class="card" style="max-width:420px; width:100%; max-height:88vh; overflow-y:auto;">
+    <h3 style="font-size:19px; margin-bottom:4px;" id="taskTitleEl"></h3>
+    <p id="taskInstructionsEl" style="font-size:13px; color:var(--ink-soft); margin-bottom:14px;"></p>
+    <a href="#" id="taskLinkEl" target="_blank" class="btn btn-primary" style="margin-bottom:18px;">Open link</a>
+
+    <form id="taskForm">
+      <div class="field">
+        <label for="taskName">Your name</label>
+        <input type="text" id="taskName" required>
+      </div>
+      <div class="field">
+        <label for="taskNumber">Your number</label>
+        <input type="tel" id="taskNumber" required placeholder="07XXXXXXXX">
+      </div>
+      <div class="field">
+        <label for="taskProof">Your username/email on that site (so we can verify)</label>
+        <input type="text" id="taskProof" required>
+      </div>
+      <div class="grid grid-2">
+        <button type="button" class="btn btn-ghost" id="taskCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">I've done it</button>
+      </div>
+    </form>
+
+    <div id="taskSuccess" style="display:none; text-align:center;">
+      <p style="font-weight:600; color:var(--green); margin-bottom:10px;">&#10003; Submitted!</p>
+      <p class="hint">We'll verify on our end and send your payment shortly.</p>
+    </div>
+  </div>
+</div>
+
 <footer>
   <div class="wrap">UGXGIG &mdash; post it, get it done, pay it out.</div>
 </footer>
 
 <script src="config.js"></script>
+<script src="activity.js"></script>
+<script>trackActivity('Browsing jobs');</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
@@ -91,9 +134,68 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const jobsRef = firebase.database().ref("jobs");
+const payoutsRef = firebase.database().ref("payouts");
+const tasksRef = firebase.database().ref("tasks");
 
 let currentJobId = null;
 let currentJob = null;
+let currentTask = null;
+let tasksById = {};
+
+tasksRef.orderByChild('active').equalTo(true).on('value', snap => {
+  const tasks = [];
+  snap.forEach(child => tasks.push({ id: child.key, ...child.val() }));
+  tasksById = Object.fromEntries(tasks.map(t => [t.id, t]));
+  renderTasks(tasks);
+});
+
+function renderTasks(tasks) {
+  const list = document.getElementById('taskList');
+  if (!tasks.length) { list.innerHTML = '<p class="hint">No tasks available right now.</p>'; return; }
+  list.innerHTML = tasks.map(t => `
+    <div class="card job-card">
+      <h3>${esc(t.title)}</h3>
+      <p>${esc(t.instructions)}</p>
+      <div class="meta"><span><b>${fmtUGX(t.reward)}</b> when verified</span></div>
+      <button class="btn btn-primary" onclick="openTask('${t.id}')">Do this task</button>
+    </div>
+  `).join('');
+}
+
+function openTask(taskId) {
+  currentTask = tasksById[taskId];
+  document.getElementById('taskTitleEl').textContent = currentTask.title;
+  document.getElementById('taskInstructionsEl').textContent = currentTask.instructions;
+  document.getElementById('taskLinkEl').href = currentTask.link;
+  document.getElementById('taskForm').style.display = 'block';
+  document.getElementById('taskSuccess').style.display = 'none';
+  document.getElementById('taskOverlay').style.display = 'flex';
+}
+
+document.getElementById('taskCancel').addEventListener('click', () => {
+  document.getElementById('taskOverlay').style.display = 'none';
+});
+
+document.getElementById('taskForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const name = document.getElementById('taskName').value.trim();
+  const number = document.getElementById('taskNumber').value.trim();
+  const proof = document.getElementById('taskProof').value.trim();
+
+  payoutsRef.push({
+    type: 'task',
+    jobTitle: currentTask.title,
+    workerName: name,
+    workerNumber: number,
+    proof,
+    amount: currentTask.reward,
+    status: 'pending',
+    createdAt: Date.now()
+  }).then(() => {
+    document.getElementById('taskForm').style.display = 'none';
+    document.getElementById('taskSuccess').style.display = 'block';
+  });
+});
 
 jobsRef.orderByChild('status').equalTo('approved').on('value', snap => {
   const jobs = [];
