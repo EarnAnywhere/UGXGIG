@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Canon Fleet — UGXGIG</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+  :root{
+    --ink:#1A1D15; --paper:#F5F6EE; --paper-raised:#FFFFFF; --line:#D6D9C8;
+    --yellow:#FFC928; --green:#2F7D4F; --green-soft:#E4F0E7; --red:#B23A2E; --red-soft:#F7E7E4;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',sans-serif;
+       padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; margin:0;}
+  .wrap{max-width:480px; margin:0 auto; padding:18px;}
+  .top{background:var(--ink); color:var(--paper); padding:14px 18px;}
+  .top b{color:var(--yellow);}
+  .card{background:var(--paper-raised); border:1.5px solid var(--ink); border-radius:10px; padding:20px; margin-bottom:16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#4A4E3F;}
+  .field input{width:100%; font-size:17px; padding:12px; border:1.5px solid var(--line); border-radius:6px; font-family:inherit;}
+  .btn{display:block; width:100%; text-align:center; font-weight:600; font-size:15px; padding:13px;
+       border-radius:6px; border:2px solid var(--ink); background:var(--yellow); color:var(--ink);
+       cursor:pointer; margin-top:8px; text-decoration:none;}
+  .btn.ghost{background:transparent;}
+  .btn.green{background:var(--green); border-color:var(--green); color:#fff;}
+  .btn[disabled]{opacity:0.4; cursor:not-allowed;}
+  .hint{font-size:13px; color:#4A4E3F; margin-top:6px;}
+  .grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin:14px 0;}
+  .cell{aspect-ratio:1; background:#fff; border:1.5px solid var(--line); border-radius:4px;
+        display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; user-select:none;}
+  .cell.ship{background:var(--yellow); border-color:var(--ink);}
+  .cell.hit{background:var(--red-soft); border-color:var(--red); color:var(--red);}
+  .cell.miss{background:#e9e9e2; color:#999;}
+  .cell.locked{cursor:default;}
+  .label{font-size:13px; font-weight:600; color:#4A4E3F; margin:16px 0 4px;}
+  .status{text-align:center; font-weight:600; padding:10px; border-radius:6px; margin-bottom:14px;}
+  .status.wait{background:#FFF3CC;}
+  .status.turn{background:var(--green-soft); color:var(--green);}
+  .status.wait-opp{background:#eee;}
+  .code{font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; letter-spacing:4px; text-align:center;}
+  .result{text-align:center; padding:30px 18px;}
+  .result h2{font-size:28px; margin-bottom:10px;}
+  .hidden{display:none;}
+  .copy-tap{background:#eee; border:1px dashed #999; border-radius:6px; padding:10px; font-size:14px; text-align:center; margin-top:10px;}
+</style>
+</head>
+<body>
+
+<div class="top"><b>UGX</b>GIG — Canon Fleet</div>
+
+<div class="wrap">
+
+  <!-- SCREEN: LOBBY -->
+  <div id="screen-lobby">
+    <div class="card">
+      <h2 style="margin-bottom:4px;">Canon Fleet</h2>
+      <p class="hint">7×7 grid. Each player hides 4 ships, then you take turns firing. First to sink all 4 wins.</p>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label for="playerName">Your name</label>
+        <input type="text" id="playerName" placeholder="Enter your name">
+      </div>
+      <button class="btn" id="createBtn">Create new match</button>
+      <p class="hint" style="text-align:center;">— or —</p>
+      <div class="field">
+        <label for="joinCode">Match code</label>
+        <input type="text" id="joinCode" placeholder="e.g. 4821" inputmode="numeric" maxlength="4">
+      </div>
+      <button class="btn ghost" id="joinBtn">Join match</button>
+      <p id="lobbyError" class="hint" style="color:var(--red);"></p>
+    </div>
+  </div>
+
+  <!-- SCREEN: SHARE CODE (host only, right after creating) -->
+  <div id="screen-share" class="hidden">
+    <div class="card" style="text-align:center;">
+      <p class="hint">Share this code with your opponent in the group:</p>
+      <div class="code" id="shareCode"></div>
+      <p class="hint">Waiting for them to join…</p>
+    </div>
+  </div>
+
+  <!-- SCREEN: PLACEMENT -->
+  <div id="screen-place" class="hidden">
+    <div class="status wait" id="placeStatus">Tap 4 cells to hide your ships</div>
+    <div class="grid" id="placeGrid"></div>
+    <button class="btn" id="readyBtn" disabled>I'm ready (0/4 placed)</button>
+  </div>
+
+  <!-- SCREEN: BATTLE -->
+  <div id="screen-battle" class="hidden">
+    <div class="status" id="battleStatus"></div>
+
+    <div class="label">Enemy waters — tap to fire</div>
+    <div class="grid" id="enemyGrid"></div>
+
+    <div class="label">Your fleet</div>
+    <div class="grid" id="ownGrid"></div>
+  </div>
+
+  <!-- SCREEN: RESULT -->
+  <div id="screen-result" class="hidden">
+    <div class="result card">
+      <h2 id="resultTitle"></h2>
+      <p id="resultSub" class="hint"></p>
+      <a href="#" class="btn green" id="submitHistoryBtn" target="_blank">Submit to Game History</a>
+      <p class="hint">Then confirm in the WhatsApp group so the win can be verified and paid out.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Pre-fill name if arriving from the main site's approval flow (?name=...)
+const urlName = new URLSearchParams(location.search).get("name");
+if (urlName) document.getElementById("playerName").value = urlName;
+
+// ---- Game constants ----
+const GRID_SIZE = 7;
+const SHIP_COUNT = 4;
+const GAME_HISTORY_FORM_URL = "PASTE_GOOGLE_FORM_PREFILLED_LINK_HERE"; // swap once the form exists
+
+// ---- State ----
+let roomCode = null;
+let myRole = null;    // "p1" or "p2"
+let oppRole = null;
+let myName = "";
+let myShips = [];      // indices 0-48 I've placed
+let roomRef = null;
+let startedBattleListeners = false;
+
+function show(id) {
+  ["screen-lobby","screen-share","screen-place","screen-battle","screen-result"]
+    .forEach(s => document.getElementById(s).classList.toggle("hidden", s !== id));
+}
+
+function randomCode() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+// ---- Lobby ----
+document.getElementById("createBtn").addEventListener("click", () => {
+  myName = document.getElementById("playerName").value.trim();
+  if (!myName) return showLobbyError("Enter your name first");
+
+  roomCode = randomCode();
+  myRole = "p1"; oppRole = "p2";
+  roomRef = db.ref("rooms/" + roomCode);
+  roomRef.set({
+    status: "placing",
+    turn: "p1",
+    createdAt: Date.now(),
+    players: {
+      p1: { name: myName, ready: false, ships: [], hits: [], misses: [] }
+    }
+  }).then(() => {
+    document.getElementById("shareCode").textContent = roomCode;
+    show("screen-share");
+    roomRef.child("players/p2").on("value", snap => {
+      if (snap.exists()) {
+        startPlacement();
+      }
+    });
+  });
+});
+
+document.getElementById("joinBtn").addEventListener("click", () => {
+  myName = document.getElementById("playerName").value.trim();
+  const code = document.getElementById("joinCode").value.trim();
+  if (!myName) return showLobbyError("Enter your name first");
+  if (!/^\d{4}$/.test(code)) return showLobbyError("Enter the 4-digit match code");
+
+  roomCode = code;
+  roomRef = db.ref("rooms/" + roomCode);
+  roomRef.once("value").then(snap => {
+    if (!snap.exists()) return showLobbyError("No match found with that code");
+    const data = snap.val();
+    if (data.players.p2) return showLobbyError("That match is already full");
+
+    myRole = "p2"; oppRole = "p1";
+    roomRef.child("players/p2").set({ name: myName, ready: false, ships: [], hits: [], misses: [] })
+      .then(startPlacement);
+  });
+});
+
+function showLobbyError(msg) {
+  document.getElementById("lobbyError").textContent = msg;
+}
+
+// ---- Placement ----
+function startPlacement() {
+  show("screen-place");
+  const grid = document.getElementById("placeGrid");
+  grid.innerHTML = "";
+  for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+    const c = document.createElement("div");
+    c.className = "cell";
+    c.dataset.i = i;
+    c.addEventListener("click", () => toggleShip(i, c));
+    grid.appendChild(c);
+  }
+}
+
+function toggleShip(i, cellEl) {
+  const idx = myShips.indexOf(i);
+  if (idx > -1) {
+    myShips.splice(idx, 1);
+    cellEl.classList.remove("ship");
+  } else if (myShips.length < SHIP_COUNT) {
+    myShips.push(i);
+    cellEl.classList.add("ship");
+  }
+  const btn = document.getElementById("readyBtn");
+  btn.textContent = `I'm ready (${myShips.length}/${SHIP_COUNT} placed)`;
+  btn.disabled = myShips.length !== SHIP_COUNT;
+}
+
+document.getElementById("readyBtn").addEventListener("click", () => {
+  roomRef.child("players/" + myRole).update({ ships: myShips, ready: true });
+  document.getElementById("placeStatus").textContent = "Waiting for opponent to finish placing…";
+  document.getElementById("placeStatus").className = "status wait-opp";
+  document.getElementById("readyBtn").disabled = true;
+
+  roomRef.child("players").on("value", snap => {
+    const players = snap.val();
+    if (players && players.p1 && players.p2 && players.p1.ready && players.p2.ready) {
+      roomRef.child("players").off();
+      roomRef.update({ status: "battle" });
+      startBattle();
+    }
+  });
+});
+
+// ---- Battle ----
+function startBattle() {
+  if (startedBattleListeners) return;
+  startedBattleListeners = true;
+  show("screen-battle");
+
+  const enemyGrid = document.getElementById("enemyGrid");
+  const ownGrid = document.getElementById("ownGrid");
+  enemyGrid.innerHTML = ""; ownGrid.innerHTML = "";
+
+  for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+    const ec = document.createElement("div");
+    ec.className = "cell"; ec.dataset.i = i;
+    ec.addEventListener("click", () => fireAt(i));
+    enemyGrid.appendChild(ec);
+
+    const oc = document.createElement("div");
+    oc.className = "cell locked"; oc.dataset.i = i;
+    if (myShips.includes(i)) oc.classList.add("ship");
+    ownGrid.appendChild(oc);
+  }
+
+  roomRef.on("value", snap => {
+    const data = snap.val();
+    if (!data) return;
+
+    const me = data.players[myRole];
+    const opp = data.players[oppRole];
+    if (!opp) return;
+
+    // my shots on enemy grid
+    (me.hits || []).forEach(i => markCell(enemyGrid, i, "hit"));
+    (me.misses || []).forEach(i => markCell(enemyGrid, i, "miss"));
+
+    // opponent's shots on my grid
+    (opp.hits || []).forEach(i => markCell(ownGrid, i, "hit"));
+    (opp.misses || []).forEach(i => markCell(ownGrid, i, "miss"));
+
+    const statusEl = document.getElementById("battleStatus");
+    if (data.status === "battle") {
+      if (data.turn === myRole) {
+        statusEl.textContent = "Your turn — tap enemy waters to fire";
+        statusEl.className = "status turn";
+      } else {
+        statusEl.textContent = `Waiting for ${opp.name}'s move…`;
+        statusEl.className = "status wait-opp";
+      }
+    } else if (data.status === "done") {
+      roomRef.off();
+      showResult(data.winner === myRole, data.players[myRole === "p1" ? "p2" : "p1"].name);
+    }
+  });
+}
+
+function markCell(gridEl, i, kind) {
+  const el = gridEl.querySelector(`[data-i="${i}"]`);
+  if (el && !el.classList.contains(kind)) el.classList.add(kind);
+}
+
+function fireAt(i) {
+  roomRef.once("value").then(snap => {
+    const data = snap.val();
+    if (data.status !== "battle" || data.turn !== myRole) return;
+
+    const me = data.players[myRole];
+    const opp = data.players[oppRole];
+    const already = [...(me.hits||[]), ...(me.misses||[])];
+    if (already.includes(i)) return; // already fired here
+
+    const isHit = (opp.ships || []).includes(i);
+    const field = isHit ? "hits" : "misses";
+    const updatedList = [...(me[field] || []), i];
+
+    const updates = {};
+    updates["players/" + myRole + "/" + field] = updatedList;
+
+    const sunk = isHit && (opp.ships || []).every(s => updatedList.includes(s) || (me.hits||[]).includes(s));
+    if (sunk) {
+      updates["status"] = "done";
+      updates["winner"] = myRole;
+    } else if (!isHit) {
+      updates["turn"] = oppRole; // miss passes turn; hit = bonus turn, stays with me
+    }
+
+    roomRef.update(updates);
+  });
+}
+
+function showResult(won, oppName) {
+  show("screen-result");
+  document.getElementById("resultTitle").textContent = won ? "🎉 You sunk the fleet!" : "You lost this one";
+  document.getElementById("resultSub").textContent = won
+    ? `You beat ${oppName}. Submit your result, then confirm in the group.`
+    : `${oppName} found all your ships first. Submit your result, then confirm in the group.`;
+
+  const link = GAME_HISTORY_FORM_URL
+    .replace("REPLACE_NAME", encodeURIComponent(myName))
+    .replace("REPLACE_RESULT", encodeURIComponent(won ? "Won" : "Lost"));
+  document.getElementById("submitHistoryBtn").href = link;
+}
+</script>
+
+</body>
+</html>
