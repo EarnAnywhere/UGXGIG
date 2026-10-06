@@ -2,82 +2,63 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Refer &amp; earn — UGXGIG</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="v2">
 
-<div class="topbar">
-  <div class="wrap">
-    <a href="index.html" class="brand">UGX<span>GIG</span></a>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="boss.html">Post a job</a>
-      <a href="worker.html">Find work</a>
-      <a href="games.html">Games</a>
-      <a href="referral.html" class="current">Refer</a>
-      <a href="my-jobs.html">My jobs</a>
-    </nav>
-  </div>
+<div class="v2-top">
+  <a href="index.html" class="brand">UGX<span>GIG</span></a>
+  <div class="bell">🔔</div>
 </div>
 
-<header class="page-head">
-  <div class="wrap">
-    <p class="kicker">Refer &amp; earn</p>
-    <h1>Bring someone in, earn 1,000 UGX</h1>
-    <p class="sub">Share this page's link with the person you referred. They fill it in once they land on UGXGIG.</p>
-  </div>
-</header>
+<main id="v2main">
+  <div class="v2-section" style="padding-top:8px;">
+    <h2 style="font-size:19px; margin-bottom:4px;">Refer &amp; earn</h2>
+    <p style="color:var(--v2-text-soft); font-size:13.5px; margin:0 0 16px;">Bring someone in, earn 1,000 UGX once they complete 10 tasks.</p>
 
-<main>
-  <section>
-    <div class="wrap">
-      <div class="card" style="margin-bottom:24px;">
-        <h3 style="font-size:16px; margin-bottom:10px;">How the reward works</h3>
-        <ol class="steps">
-          <li>Share this page's link with the person you're referring.</li>
-          <li>They fill in the form below and send it to us on WhatsApp.</li>
-          <li>Once they complete at least 10 tasks on UGXGIG, you get 1,000 UGX &mdash; paid out of their earnings, 100 UGX at a time per task, until it's covered.</li>
-        </ol>
+    <div class="v2-card" style="margin-bottom:16px;">
+      <h3 style="font-size:15px; margin-bottom:10px;">How the reward works</h3>
+      <p style="font-size:13.5px; color:var(--v2-text-soft); margin:0 0 8px;">1. Share this page's link with the person you're referring.</p>
+      <p style="font-size:13.5px; color:var(--v2-text-soft); margin:0 0 8px;">2. They fill in the form below and send it to us.</p>
+      <p style="font-size:13.5px; color:var(--v2-text-soft); margin:0;">3. Once they complete at least 10 tasks, you get 1,000 UGX — paid out of their earnings, 100 UGX at a time per task, until it's covered.</p>
+    </div>
+
+    <form id="referralForm" class="v2-card">
+      <p style="font-size:13px; color:var(--v2-text-soft); margin:0 0 16px;">If you were referred by someone, fill this in so they get credit.</p>
+
+      <div class="v2-field">
+        <label for="rName">Your name</label>
+        <input type="text" id="rName" required>
+      </div>
+      <div class="v2-field">
+        <label for="rNumber">Your number</label>
+        <input type="tel" id="rNumber" required placeholder="07XXXXXXXX">
+      </div>
+      <div class="v2-field">
+        <label for="refName">Referrer's name</label>
+        <input type="text" id="refName" required>
+      </div>
+      <div class="v2-field">
+        <label for="refNumber">Referrer's number</label>
+        <input type="tel" id="refNumber" required placeholder="07XXXXXXXX">
       </div>
 
-      <form id="referralForm" class="ticket" style="padding:22px;">
-        <p style="font-size:14px; color:var(--ink-soft); margin-bottom:18px;">If you were referred by someone, fill this in so they get credit.</p>
-
-        <div class="grid grid-2">
-          <div class="field">
-            <label for="rName">Your name</label>
-            <input type="text" id="rName" required>
-          </div>
-          <div class="field">
-            <label for="rNumber">Your number</label>
-            <input type="tel" id="rNumber" required placeholder="07XXXXXXXX">
-          </div>
-        </div>
-
-        <div class="grid grid-2">
-          <div class="field">
-            <label for="refName">Referrer's name</label>
-            <input type="text" id="refName" required>
-          </div>
-          <div class="field">
-            <label for="refNumber">Referrer's number</label>
-            <input type="tel" id="refNumber" required placeholder="07XXXXXXXX">
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Done &mdash; join referral group</button>
-        <p class="hint" style="margin-top:10px;">Copies your details and opens the referral group. Paste and send once you're in.</p>
-        <span class="copied-flag" id="refCopied">&#10003; Copied &mdash; paste it in the group chat</span>
-      </form>
-    </div>
-  </section>
+      <button type="submit" class="v2-btn v2-btn-green">Done — join referral group</button>
+      <p style="font-size:12.5px; color:var(--v2-text-soft); margin-top:10px;">Copies your details and opens the referral group. Paste and send once you're in.</p>
+      <span style="display:none; color:var(--v2-green); font-size:13px; font-weight:600;" id="refCopied">&#10003; Copied — paste it in the group chat</span>
+    </form>
+  </div>
 </main>
 
-<footer>
-  <div class="wrap">UGXGIG &mdash; every gig ends in a WhatsApp chat.</div>
-</footer>
+<nav class="v2-tabbar">
+  <a href="index.html"><span class="ic">🏠</span>Home</a>
+  <a href="worker.html"><span class="ic">📋</span>Tasks</a>
+  <a href="games.html"><span class="ic">🎮</span>Games</a>
+  <a href="referral.html" class="active"><span class="ic">🤝</span>Refer</a>
+  <a href="profile.html"><span class="ic">👤</span>Profile</a>
+</nav>
 
 <script src="config.js"></script>
 <script src="activity.js"></script>
@@ -99,7 +80,7 @@ Referrer's name: ${refName}
 Referrer's number: ${refNumber}`;
 
   openGroupWithMessage('referral', message);
-  document.getElementById('refCopied').classList.add('show');
+  document.getElementById('refCopied').style.display = 'inline';
 });
 </script>
 
