@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Spelling Battle — UGXGIG</title>
+<style>
+:root{--bg:#1b1640;--card:#2a2360;--ink:#fff;--mut:#b9b3e6;--ok:#2ecc71;--bad:#ff5c6c;--acc:#ffd23f}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Arial,sans-serif;min-height:100vh;display:flex;justify-content:center}
+#app{width:100%;max-width:480px;padding:16px}
+h1{text-align:center;margin:8px 0 4px;font-size:32px}
+.sub{text-align:center;color:var(--mut);margin-bottom:16px}
+.card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px}
+input[type=text]{width:100%;padding:14px;border-radius:12px;border:2px solid #4b42a0;background:#1b1640;color:#fff;font-size:20px;margin-bottom:10px}
+button{font-size:18px;font-weight:700;border:0;border-radius:14px;padding:14px 18px;background:var(--acc);color:#1b1640;width:100%;margin-top:8px}
+button.sec{background:#4b42a0;color:#fff}
+.code{font-size:36px;font-weight:800;letter-spacing:.3em;text-align:center;margin:14px 0}
+.err{color:#ff8a8a;text-align:center;min-height:1.2em}
+.players{display:flex;gap:6px;margin-bottom:12px}
+.pl{flex:1;background:var(--card);border-radius:12px;padding:8px 4px;text-align:center;font-size:13px;border:2px solid transparent}
+.pl.on{border-color:var(--acc)}
+.pl b{display:block;font-size:20px}
+.blanks{font-size:30px;letter-spacing:6px;text-align:center;margin:10px 0;font-family:monospace}
+.hint{text-align:center;color:var(--mut);font-size:17px;margin:6px 0}
+.timer{height:10px;background:#1b1640;border-radius:6px;overflow:hidden;margin-bottom:12px}
+.timer div{height:100%;background:var(--acc);width:100%}
+.big{font-size:26px;text-align:center;font-weight:800;margin:10px 0}
+.good{color:var(--ok)}.bad{color:var(--bad)}
+.row{display:flex;justify-content:space-between;padding:10px 4px;border-bottom:1px solid #4b42a0;font-size:20px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+});
+const db = firebase.database();
+const SLOTS=["p1","p2","p3","p4"];
+let roomCode=null,myRole=null,myName="",roomRef=null;
+
+const WORDS=[
+["necessary","Needed; required"],["rhythm","A repeating pattern of beats in music"],["separate","To divide or keep apart"],
+["receive","To get something that is given or sent"],["calendar","Shows days, weeks and months of the year"],
+["February","The shortest month"],["library","A place where you borrow books"],["government","The group that runs a country"],
+["environment","The natural world around us"],["restaurant","A place where you pay to eat meals"],["vacuum","A space with no air; also a cleaning machine"],
+["millennium","A period of one thousand years"],["pneumonia","A serious lung infection"],["rhinoceros","Large animal with a horn on its nose"],
+["parallel","Lines that never meet, side by side"],["committee","A small group chosen to make decisions"],
+["accommodate","To provide a place for someone to stay"],["silhouette","A dark outline of a shape against light"],
+["mischievous","Playfully naughty"],["tomorrow","The day after today"],["beautiful","Very pretty"],["different","Not the same"],
+["friend","Someone you like and trust"],["island","Land surrounded by water"],["knowledge","What you know from learning"],
+["language","English, Swahili or Luganda, for example"],["answer","What you give to a question"],["because","Used to give a reason"],
+["bicycle","Two-wheeled vehicle you pedal"],["elephant","Biggest land animal"],["weather","Rain, sun, wind and clouds"],
+["address","Where you live, written down"],["exercise","Physical activity to stay fit"],["necessary2","x"],
+["lightning","A flash of light in a storm"],["pyramid","Triangle-shaped ancient tomb in Egypt"],["scissors","Tool with two blades for cutting paper"],
+["umbrella","Keeps you dry in the rain"],["vegetable","Carrots and spinach are examples"],["yesterday","The day before today"],["adventure","An exciting or risky journey"]
+].filter(w=>w[1]!=="x");
+const COLORS=["#ff5c6c","#4dabf7","#2ecc71","#ffd23f"];
+const app=document.getElementById("app");
+let S={};
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function seededShuffle(a,seed){a=a.slice();const r=rng(seed);for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function genCode(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<4;i++)s+=A[Math.floor(Math.random()*A.length)];return s}
+function countJoined(players){return players?Object.keys(players).length:0}
+
+function setup(){
+  const urlName=new URLSearchParams(location.search).get('name')||"";
+  app.innerHTML=`<h1>🐝 Spelling Battle</h1><div class="sub">Up to 4 players · same words, highest score wins</div>
+  <div class="card">
+    <input type="text" id="pname" placeholder="Your name" value="${esc(urlName)}">
+    <button onclick="createRoom()">Create new match</button>
+    <div class="sub" style="margin:8px 0">— or —</div>
+    <input type="text" id="jcode" placeholder="Match code" maxlength="5" style="text-transform:uppercase">
+    <button class="sec" onclick="joinRoom()">Join match</button>
+    <div class="err" id="err"></div>
+  </div>
+  <div class="card sub">Listen to the word (tap 🔊), read the clue, type the spelling. Correct = 10 points + streak bonus. Beat the 25 second timer!</div>`;
+}
+
+function createRoom(){
+  myName=document.getElementById("pname").value.trim();
+  if(!myName)return showErr("Enter your name first");
+  roomCode=genCode();myRole="p1";
+  roomRef=db.ref("rooms_spelling/"+roomCode);
+  roomRef.set({status:"lobby",seed:Math.floor(Math.random()*1e6),rounds:5,createdAt:Date.now(),
+    players:{p1:{name:myName,score:0,done:false}}}).then(()=>{
+    showShare();
+    roomRef.child("status").on("value",snap=>{if(snap.val()==="playing")enterGame()});
+  });
+}
+function showShare(){
+  app.innerHTML=`<h1>Match code</h1><div class="card"><div class="code">${roomCode}</div>
+  <div class="sub">Share this with up to 3 friends. Start once at least 2 of you have joined.</div>
+  <button id="startBtn" onclick="hostStart()" disabled>Start battle</button></div>`;
+  roomRef.child("players").on("value",snap=>{
+    const btn=document.getElementById("startBtn");
+    if(btn)btn.disabled=countJoined(snap.val())<2;
+  });
+}
+function hostStart(){roomRef.update({status:"playing"})}
+
+function joinRoom(){
+  myName=document.getElementById("pname").value.trim();
+  const code=(document.getElementById("jcode").value||"").trim().toUpperCase();
+  if(!myName)return showErr("Enter your name first");
+  if(code.length<4)return showErr("Enter the match code");
+  roomRef=db.ref("rooms_spelling/"+code);
+  roomRef.once("value").then(snap=>{
+    if(!snap.exists())return showErr("No match found with that code");
+    const players=snap.val().players||{};
+    const free=SLOTS.find(s=>!players[s]);
+    if(!free)return showErr("That match is full");
+    roomCode=code;myRole=free;
+    roomRef.child("players/"+free).set({name:myName,score:0,done:false}).then(()=>{
+      app.innerHTML=`<h1>Joined!</h1><div class="card sub">Waiting for the host to start the battle&hellip;</div>`;
+      roomRef.child("status").on("value",snap2=>{if(snap2.val()==="playing")enterGame()});
+    });
+  });
+}
+function showErr(m){document.getElementById("err").textContent=m}
+
+function speak(w){
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.rate=0.8;speechSynthesis.speak(u)}catch(e){}
+}
+
+function enterGame(){
+  roomRef.child("status").off();
+  roomRef.once("value").then(snap=>{
+    const d=snap.val();
+    S={score:0,streak:0,turn:0,rounds:d.rounds,words:seededShuffle(WORDS,d.seed).slice(0,d.rounds)};
+    intro();
+  });
+}
+function board(){
+  return `<div class="card sub">Your score: <b>${S.score}</b></div>`;
+}
+function intro(){
+  if(S.turn>=S.rounds)return finishMatch();
+  app.innerHTML=board()+`<div class="card"><div class="sub">Word ${S.turn+1} of ${S.rounds}</div>
+  <button onclick="play()">I'm ready</button></div>`;
+}
+function play(){
+  const [w,h]=S.words[S.turn];
+  S.t0=Date.now();
+  app.innerHTML=board()+`<div class="card"><div class="timer"><div id="bar"></div></div>
+  <div class="hint">Clue: ${esc(h)}</div>
+  <div class="blanks">${w[0].toUpperCase()+" _".repeat(w.length-1)}</div>
+  <div class="hint">${w.length} letters</div>
+  <button class="sec" onclick="speak('${w}')">🔊 Hear the word</button>
+  <input type="text" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Type spelling" style="margin-top:12px">
+  <button onclick="submit()">Submit</button></div>`;
+  speak(w);
+  const inp=document.getElementById("ans");inp.focus();
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+  clearInterval(S.timer);
+  S.timer=setInterval(()=>{
+    const left=Math.max(0,25000-(Date.now()-S.t0));
+    const bar=document.getElementById("bar");if(bar)bar.style.width=(left/250)+"%";
+    if(left<=0){clearInterval(S.timer);result("")}
+  },100);
+}
+function submit(){clearInterval(S.timer);result(document.getElementById("ans").value)}
+function result(guess){
+  const [w]=S.words[S.turn];
+  const ok=guess.trim().toLowerCase()===w.toLowerCase();
+  let msg;
+  if(ok){S.streak++;const bonus=(S.streak-1)*2;S.score+=10+bonus;msg=`<div class="big good">✅ Correct! +${10+bonus}</div>`+(S.streak>1?`<div class="hint">🔥 Streak x${S.streak}</div>`:"")}
+  else{S.streak=0;msg=`<div class="big bad">❌ Not quite</div><div class="hint">${guess?"You wrote: "+esc(guess):"Time's up!"}</div>`}
+  S.turn++;
+  roomRef.child("players/"+myRole+"/score").set(S.score);
+  app.innerHTML=board()+`<div class="card">${msg}<div class="hint">Correct spelling</div><div class="big">${w}</div>
+  <button onclick="intro()">Next</button></div>`;
+}
+function finishMatch(){
+  roomRef.child("players/"+myRole).update({score:S.score,done:true});
+  app.innerHTML=`<h1>🏆 Results</h1><div class="card" id="lb">Waiting for everyone to finish&hellip;</div>`;
+  roomRef.child("players").on("value",snap=>{
+    const players=snap.val()||{};
+    const list=Object.values(players);
+    const allDone=list.every(p=>p.done);
+    const sorted=list.slice().sort((a,b)=>b.score-a.score);
+    document.getElementById("lb").innerHTML=sorted.map((p,i)=>`
+      <div class="row"><span>${["🥇","🥈","🥉","4️⃣"][i]||""} ${esc(p.name)}</span>
+      <span>${p.done?p.score+" pts":"still playing…"}</span></div>
+    `).join("");
+    if(allDone)document.getElementById("lb").innerHTML+=`<div class="big">${esc(sorted[0].name)} wins!</div>`;
+  });
+}
+setup();
+</script>
+</body>
+</html>
