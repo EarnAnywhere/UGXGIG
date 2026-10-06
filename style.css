@@ -1,5 +1,109 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
+/* ============================================================
+   UGXGIG v2 — dark theme + bottom tab navigation
+   New pages opt in with class="v2" on <body>. Old pages keep
+   working untouched until migrated.
+   ============================================================ */
+:root {
+  --v2-bg: #0B0F14;
+  --v2-surface: #141A21;
+  --v2-surface-raised: #1B232C;
+  --v2-line: #263038;
+  --v2-text: #EDF1F4;
+  --v2-text-soft: #8B98A3;
+  --v2-green: #22C55E;
+  --v2-green-soft: rgba(34,197,94,0.14);
+  --v2-purple: #8B5CF6;
+  --v2-gold: #FFC928;
+  --v2-red: #F2545B;
+}
+body.v2 {
+  background: var(--v2-bg);
+  color: var(--v2-text);
+}
+body.v2 h1, body.v2 h2, body.v2 h3 { color: var(--v2-text); }
+body.v2 .wrap { max-width: 480px; }
+
+.v2-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; background: var(--v2-bg);
+}
+.v2-top .brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 19px; color: var(--v2-text); text-decoration: none; }
+.v2-top .brand span { color: var(--v2-green); }
+.v2-top .bell { width: 36px; height: 36px; border-radius: 50%; background: var(--v2-surface); display: flex; align-items: center; justify-content: center; }
+
+.v2-card {
+  background: var(--v2-surface); border: 1px solid var(--v2-line); border-radius: 16px; padding: 18px;
+}
+.v2-hero {
+  background: linear-gradient(135deg, #1B4D32, #103221);
+  border: 1px solid #1F5C3A; border-radius: 18px; padding: 22px; margin: 16px 20px;
+}
+.v2-hero h2 { font-size: 20px; margin-bottom: 6px; }
+.v2-hero p { color: #B9D9C4; font-size: 14px; margin: 0 0 16px; }
+.v2-hero .btn-earn {
+  display: inline-flex; align-items: center; gap: 8px; background: var(--v2-green); color: #06240F;
+  font-weight: 700; font-size: 14px; padding: 10px 16px; border-radius: 10px; text-decoration: none;
+}
+
+.v2-section { padding: 18px 20px 4px; }
+.v2-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.v2-section-head h3 { font-size: 16px; }
+.v2-section-head a { font-size: 13px; color: var(--v2-text-soft); text-decoration: none; }
+
+.v2-gig {
+  display: flex; gap: 12px; align-items: center; background: var(--v2-surface);
+  border: 1px solid var(--v2-line); border-radius: 14px; padding: 14px; margin-bottom: 10px;
+  text-decoration: none; color: var(--v2-text);
+}
+.v2-gig .ic {
+  width: 44px; height: 44px; border-radius: 10px; background: var(--v2-surface-raised);
+  display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+}
+.v2-gig .body { flex: 1; min-width: 0; }
+.v2-gig .title { font-size: 14.5px; font-weight: 600; margin-bottom: 3px; }
+.v2-gig .meta { font-size: 12.5px; color: var(--v2-text-soft); display: flex; gap: 10px; }
+.v2-gig .pay { font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--v2-green); font-size: 14px; white-space: nowrap; }
+
+.v2-tile {
+  background: var(--v2-surface); border: 1px solid var(--v2-line); border-radius: 14px;
+  padding: 16px; text-align: center; text-decoration: none; color: var(--v2-text);
+}
+.v2-tile .ic { font-size: 26px; margin-bottom: 8px; display: block; }
+.v2-tile .label { font-size: 13px; font-weight: 600; }
+.v2-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+
+.v2-empty { color: var(--v2-text-soft); font-size: 14px; text-align: center; padding: 20px 0; }
+
+/* Bottom tab bar */
+.v2-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  background: var(--v2-surface); border-top: 1px solid var(--v2-line);
+  display: flex; padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.v2-tabbar a {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 4px 8px; text-decoration: none; color: var(--v2-text-soft); font-size: 11px; font-weight: 600;
+}
+.v2-tabbar a .ic { font-size: 19px; }
+.v2-tabbar a.active { color: var(--v2-green); }
+body.v2 main, body.v2 #v2main { padding-bottom: 86px; }
+
+.v2-btn {
+  display: block; width: 100%; text-align: center; font-weight: 700; font-size: 15px; padding: 14px;
+  border-radius: 12px; border: none; cursor: pointer; text-decoration: none;
+}
+.v2-btn-green { background: var(--v2-green); color: #06240F; }
+.v2-btn-ghost { background: var(--v2-surface-raised); color: var(--v2-text); border: 1px solid var(--v2-line); }
+
+.v2-field { margin-bottom: 14px; }
+.v2-field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--v2-text-soft); }
+.v2-field input, .v2-field textarea {
+  width: 100%; font-size: 16px; padding: 13px; border-radius: 10px; border: 1px solid var(--v2-line);
+  background: var(--v2-surface-raised); color: var(--v2-text); font-family: inherit;
+}
+
 :root {
   --ink: #1A1D15;
   --ink-soft: #4A4E3F;
