@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Whack-a-Mole — UGXGIG</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+  :root{
+    --ink:#1A1D15; --paper:#F5F6EE; --paper-raised:#FFFFFF; --line:#D6D9C8;
+    --yellow:#FFC928; --green:#2F7D4F; --green-soft:#E4F0E7; --red:#B23A2E; --red-soft:#F7E7E4;
+    --mole:#8B5E34; --blue:#2B5F9E; --blue-soft:#E3ECF6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',sans-serif;
+       padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+       -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; margin:0;}
+  .wrap{max-width:480px; margin:0 auto; padding:18px;}
+  .top{background:var(--ink); color:var(--paper); padding:14px 18px;}
+  .top b{color:var(--yellow);}
+  .card{background:var(--paper-raised); border:1.5px solid var(--ink); border-radius:12px; padding:20px; margin-bottom:16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#4A4E3F;}
+  .field input{width:100%; font-size:17px; padding:12px; border:1.5px solid var(--line); border-radius:6px; font-family:inherit;}
+  .btn{display:block; width:100%; text-align:center; font-weight:600; font-size:15px; padding:14px;
+       border-radius:8px; border:2px solid var(--ink); background:var(--yellow); color:var(--ink);
+       cursor:pointer; text-decoration:none;}
+  .btn.ghost{background:transparent;}
+  .btn.green{background:var(--green); border-color:var(--green); color:#fff;}
+  .btn[disabled]{opacity:0.4; cursor:not-allowed;}
+  .hint{font-size:13px; color:#4A4E3F; margin-top:8px;}
+  .hidden{display:none;}
+  .code{font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; letter-spacing:4px; text-align:center;}
+
+  .scoreboard{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px;}
+  .score-pill{border-radius:30px; padding:10px 16px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; flex:1; text-align:center;}
+  .score-pill.me{background:var(--ink); color:var(--paper);}
+  .score-pill.opp{background:#eee; color:var(--ink);}
+  .timer-pill{background:var(--red-soft); color:var(--red); border-radius:30px; padding:10px 16px;
+              font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; text-align:center;}
+
+  .board{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
+    background:linear-gradient(180deg,#C9BB8F,#B7A478);
+    border-radius:16px; padding:16px; border:3px solid var(--ink);
+  }
+  .hole{
+    aspect-ratio:1; border-radius:50%;
+    background:radial-gradient(ellipse at 50% 60%, #3a2a18, #5c4327 70%);
+    position:relative; overflow:hidden; cursor:pointer;
+    box-shadow: inset 0 6px 10px rgba(0,0,0,0.5);
+  }
+  .critter{
+    position:absolute; left:50%; bottom:-100%; width:66%; height:66%;
+    transform:translateX(-50%); border-radius:50% 50% 45% 45%;
+    transition:bottom 0.12s ease-out;
+    display:flex; align-items:center; justify-content:center; font-size:26px;
+  }
+  .critter.up{ bottom:6%; }
+  .critter.red{ background:var(--red); }
+  .critter.blue{ background:var(--blue); }
+
+  .result{text-align:center; padding:10px 0;}
+  .result .big{font-family:'Space Grotesk',sans-serif; font-size:40px; font-weight:700; margin:10px 0;}
+</style>
+</head>
+<body>
+
+<div class="top"><b>UGX</b>GIG — Whack-a-Mole</div>
+
+<div class="wrap">
+
+  <!-- SCREEN: LOBBY -->
+  <div id="screen-lobby">
+    <div class="card">
+      <h2 style="margin-bottom:4px;">Whack-a-Mole</h2>
+      <p class="hint">90 seconds, live. Same moles pop up on both phones. Host is Red, challenger is Blue — only hit your color. Right color +10, wrong color -5.</p>
+    </div>
+    <div class="card">
+      <div class="field">
+        <label for="playerName">Your name</label>
+        <input type="text" id="playerName" placeholder="Enter your name">
+      </div>
+      <button class="btn" id="createBtn">Create new match (I'm Red)</button>
+      <p class="hint" style="text-align:center;">— or —</p>
+      <div class="field">
+        <label for="joinCode">Match code</label>
+        <input type="text" id="joinCode" placeholder="e.g. 4821" inputmode="numeric" maxlength="4">
+      </div>
+      <button class="btn ghost" id="joinBtn">Join match (I'm Blue)</button>
+      <p id="lobbyError" class="hint" style="color:var(--red);"></p>
+    </div>
+  </div>
+
+  <!-- SCREEN: SHARE CODE -->
+  <div id="screen-share" class="hidden">
+    <div class="card" style="text-align:center;">
+      <p class="hint">Share this code with your opponent in the group:</p>
+      <div class="code" id="shareCode"></div>
+      <p class="hint">Waiting for them to join…</p>
+    </div>
+  </div>
+
+  <!-- SCREEN: PLAY -->
+  <div id="screen-play" class="hidden">
+    <div class="scoreboard">
+      <div class="score-pill me" id="myScore">You: 0</div>
+      <div class="timer-pill" id="timerDisplay">1:30</div>
+      <div class="score-pill opp" id="oppScore">Opp: 0</div>
+    </div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <!-- SCREEN: RESULT -->
+  <div id="screen-result" class="hidden">
+    <div class="card result">
+      <h2 id="resultTitle"></h2>
+      <div class="big" id="finalScoreLine"></div>
+      <a href="#" class="btn green" id="submitHistoryBtn" target="_blank">Submit to Game History</a>
+      <p class="hint">Then confirm in the WhatsApp group so the win can be verified and paid out.</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBEePsSdUMz0X5oGNM81TE3xKbwAas9L_Q",
+  authDomain: "ugxgig-games.firebaseapp.com",
+  databaseURL: "https://ugxgig-games-default-rtdb.firebaseio.com/",
+  projectId: "ugxgig-games",
+  storageBucket: "ugxgig-games.firebasestorage.app",
+  messagingSenderId: "341111144918",
+  appId: "1:341111144918:web:3b49eca252e90449132477",
+  measurementId: "G-PS5JKTS763"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Pre-fill name if arriving from the main site's approval flow (?name=...)
+const urlName = new URLSearchParams(location.search).get("name");
+if (urlName) document.getElementById("playerName").value = urlName;
+
+const GAME_HISTORY_FORM_URL = "PASTE_GOOGLE_FORM_PREFILLED_LINK_HERE";
+const ROUND_MS = 90 * 1000;
+const HOLE_COUNT = 9;
+const HIT_POINTS = 10;
+const WRONG_COLOR_PENALTY = -5;
+
+let roomCode = null, myRole = null, oppRole = null, myName = "";
+let myColor = null, oppColor = null;
+let roomRef = null;
+let boardEls = [];
+let resolvedCritterIds = new Set();
+let timerInterval = null;
+let spawnTimer = null;
+let gameEnded = false;
+
+function show(id) {
+  ["screen-lobby","screen-share","screen-play","screen-result"]
+    .forEach(s => document.getElementById(s).classList.toggle("hidden", s !== id));
+}
+function randomCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
+function showLobbyError(msg) { document.getElementById("lobbyError").textContent = msg; }
+
+// ---- Lobby ----
+document.getElementById("createBtn").addEventListener("click", () => {
+  myName = document.getElementById("playerName").value.trim();
+  if (!myName) return showLobbyError("Enter your name first");
+
+  roomCode = randomCode();
+  myRole = "p1"; oppRole = "p2"; myColor = "red"; oppColor = "blue";
+  roomRef = db.ref("rooms_mole/" + roomCode);
+  roomRef.set({
+    status: "lobby",
+    createdAt: Date.now(),
+    players: { p1: { name: myName, color: "red", score: 0 } }
+  }).then(() => {
+    document.getElementById("shareCode").textContent = roomCode;
+    show("screen-share");
+    roomRef.child("players/p2").on("value", snap => {
+      if (snap.exists()) {
+        roomRef.update({ status: "playing", startedAt: firebase.database.ServerValue.TIMESTAMP });
+      }
+    });
+    roomRef.child("status").on("value", snap => {
+      if (snap.val() === "playing") beginPlay(true);
+    });
+  });
+});
+
+document.getElementById("joinBtn").addEventListener("click", () => {
+  myName = document.getElementById("playerName").value.trim();
+  const code = document.getElementById("joinCode").value.trim();
+  if (!myName) return showLobbyError("Enter your name first");
+  if (!/^\d{4}$/.test(code)) return showLobbyError("Enter the 4-digit match code");
+
+  roomCode = code;
+  roomRef = db.ref("rooms_mole/" + roomCode);
+  roomRef.once("value").then(snap => {
+    if (!snap.exists()) return showLobbyError("No match found with that code");
+    const data = snap.val();
+    if (data.players.p2) return showLobbyError("That match is already full");
+
+    myRole = "p2"; oppRole = "p1"; myColor = "blue"; oppColor = "red";
+    roomRef.child("players/p2").set({ name: myName, color: "blue", score: 0 }).then(() => {
+      roomRef.child("status").on("value", snap2 => {
+        if (snap2.val() === "playing") beginPlay(false);
+      });
+    });
+  });
+});
+
+// ---- Board setup ----
+function buildBoard() {
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  boardEls = [];
+  for (let i = 0; i < HOLE_COUNT; i++) {
+    const hole = document.createElement("div");
+    hole.className = "hole";
+    const critter = document.createElement("div");
+    critter.className = "critter";
+    hole.appendChild(critter);
+    hole.addEventListener("click", () => whack(i));
+    board.appendChild(hole);
+    boardEls.push({ hole, critter });
+  }
+}
+
+// ---- Play (host spawns, both render + score) ----
+function beginPlay(isHost) {
+  roomRef.child("status").off();
+  if (gameEnded) return;
+  show("screen-play");
+  buildBoard();
+  resolvedCritterIds.clear();
+
+  roomRef.once("value").then(snap => {
+    const startedAt = snap.val().startedAt || Date.now();
+    runTimer(startedAt);
+
+    roomRef.child("current").on("value", csnap => {
+      const c = csnap.val();
+      if (!c) return;
+      renderCritter(c);
+    });
+
+    roomRef.child("players").on("value", psnap => {
+      const players = psnap.val();
+      if (!players) return;
+      const me = players[myRole], opp = players[oppRole];
+      if (me) document.getElementById("myScore").textContent = `You: ${me.score || 0}`;
+      if (opp) document.getElementById("oppScore").textContent = `Opp: ${opp.score || 0}`;
+    });
+
+    if (isHost) spawnLoop(startedAt);
+  });
+}
+
+function spawnLoop(startedAt) {
+  if (gameEnded) return;
+  const elapsed = Date.now() - startedAt;
+  if (elapsed >= ROUND_MS) { finishGame(); return; }
+
+  const id = "c" + Date.now();
+  const color = Math.random() < 0.5 ? "red" : "blue";
+  const hole = Math.floor(Math.random() * HOLE_COUNT);
+
+  roomRef.child("current").set({ id, color, hole, spawnedAt: Date.now() });
+
+  const gapMs = Math.max(320, 900 - elapsed / 120);
+  spawnTimer = setTimeout(() => spawnLoop(startedAt), gapMs);
+}
+
+function renderCritter(c) {
+  boardEls.forEach(({ critter }) => {
+    critter.classList.remove("up","red","blue");
+  });
+  const target = boardEls[c.hole];
+  if (!target) return;
+  target.critter.classList.add("up", c.color);
+  target.critter.textContent = "🐹";
+  target.critter.dataset.id = c.id;
+  target.critter.dataset.color = c.color;
+}
+
+function whack(i) {
+  const critter = boardEls[i].critter;
+  const id = critter.dataset.id;
+  if (!id || !critter.classList.contains("up")) return;
+  if (resolvedCritterIds.has(id)) return;
+  resolvedCritterIds.add(id);
+
+  const correct = critter.dataset.color === myColor;
+  const delta = correct ? HIT_POINTS : WRONG_COLOR_PENALTY;
+
+  roomRef.child("players/" + myRole + "/score").transaction(cur => Math.max(0, (cur || 0) + delta));
+}
+
+function runTimer(startedAt) {
+  timerInterval = setInterval(() => {
+    const remaining = Math.max(0, ROUND_MS - (Date.now() - startedAt));
+    const totalSec = Math.ceil(remaining / 1000);
+    const m = Math.floor(totalSec / 60), s = totalSec % 60;
+    document.getElementById("timerDisplay").textContent = `${m}:${String(s).padStart(2,"0")}`;
+    if (remaining <= 0) finishGame();
+  }, 250);
+}
+
+function finishGame() {
+  if (gameEnded) return;
+  gameEnded = true;
+  clearInterval(timerInterval);
+  clearTimeout(spawnTimer);
+  roomRef.child("current").off();
+
+  roomRef.child("players").once("value").then(snap => {
+    const players = snap.val();
+    const me = players[myRole], opp = players[oppRole];
+    const myScore = me ? me.score || 0 : 0;
+    const oppScore = opp ? opp.score || 0 : 0;
+
+    show("screen-result");
+    const title = document.getElementById("resultTitle");
+    if (myScore > oppScore) { title.textContent = "🎉 You won!"; title.style.color = "var(--green)"; }
+    else if (myScore < oppScore) { title.textContent = "You lost this one"; title.style.color = "var(--red)"; }
+    else { title.textContent = "It's a tie"; title.style.color = "var(--ink)"; }
+
+    document.getElementById("finalScoreLine").textContent = `${myScore} — ${oppScore}`;
+
+    const link = GAME_HISTORY_FORM_URL
+      .replace("REPLACE_NAME", encodeURIComponent(myName))
+      .replace("REPLACE_RESULT", encodeURIComponent(String(myScore)));
+    document.getElementById("submitHistoryBtn").href = link;
+
+    roomRef.child("players").off();
+  });
+}
+</script>
+
+</body>
+</html>
